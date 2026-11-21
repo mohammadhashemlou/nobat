@@ -6,10 +6,10 @@
 | --- | --- | --- | --- |
 | تست واحد دامنه و کاربرد | xUnit | `backend/tests/Nobat.Domain.Tests`، `backend/tests/Nobat.Application.Tests` | ۷۷ |
 | تست یکپارچه API | xUnit + `WebApplicationFactory` + PostgreSQL | `backend/tests/Nobat.Api.Tests` | ۳۷ |
-| تست واحد/کامپوننت فرانتاند | Vitest + `@vue/test-utils` | `frontend/tests/unit` | ۵۵ |
+| تست واحد/کامپوننت front-end | Vitest + `@vue/test-utils` | `frontend/tests/unit` | ۵۵ |
 | End-to-end | Playwright | `frontend/tests/e2e` | ۱۵ |
 
-## بکاند
+## Back-end
 
 ```bash
 cd backend
@@ -19,22 +19,22 @@ dotnet test tests/Nobat.Application.Tests   # موتور زمانبندی + اع
 dotnet test tests/Nobat.Api.Tests           # به PostgreSQL نیاز دارد
 ```
 
-### تستهای یکپارچه و دیتابیس
+### تستهای یکپارچه و database
 
-`Nobat.Api.Tests` خط لوله واقعی API رادر برابر یک **دیتابیس یکبارمصرف** راهاندازی می کند:
+`Nobat.Api.Tests` خط لوله واقعی API را در برابر یک **database یکبارمصرف** راهاندازی می کند:
 
-- در ابتدا یک دیتابیس با نام منحصربهفرد (`nobat_test_<random>`) ساخته و در پایان حذف می شود؛
+- در ابتدا یک database با نام منحصربهفرد (`nobat_test_<random>`) ساخته و در پایان حذف می شود؛
 - رشته اتصال ابتدا از `NOBAT_TEST_DB`، سپس `ConnectionStrings__Default` و در نهایت از پیشفرض
   محلی توسعه (`localhost:5433`، کاربر `nobat`) خوانده می شود؛
-- کاربر دیتابیس به مجوزهای `CREATE DATABASE` و `CREATE EXTENSION btree_gist` نیاز دارد
+- کاربر database به مجوزهای `CREATE DATABASE` و `CREATE EXTENSION btree_gist` نیاز دارد
   (قید انحصاری به آن وابسته است).
 
 اگر PostgreSQL در دسترس نباشد، تستها **رد می شوند** (skip) با یک پیام توضیحی، نه اینکه شکست بخورند؛
-بنابراین `dotnet test` روی ماشینی بدون دیتابیس هم قابل استفاده است. در CI سرویس `postgres:17` فراهم
+بنابراین `dotnet test` روی ماشینی بدون database هم قابل استفاده است. در CI سرویس `postgres:17` فراهم
 است، پس تستها همیشه اجرا می شوند.
 
 ```bash
-# هدایت تستها به یک سرور مشخص
+# Point the suite at a specific server
 NOBAT_TEST_DB="Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres" \
   dotnet test tests/Nobat.Api.Tests
 ```
@@ -46,12 +46,12 @@ NOBAT_TEST_DB="Host=localhost;Port=5432;Database=postgres;Username=postgres;Pass
 - جریان کامل رزرو: زمانهای آزاد → رزرو → ناپدید شدن زمان → لغو → بازگشت زمان؛
 - تمام مسیرهای رد شدن (`PAST_TIME`، `HOLIDAY`، `OUTSIDE_WORKING_HOURS`، `BREAK_OVERLAP`،
   `NOT_WORKING_DAY`، `SLOT_ALREADY_BOOKED`، `FORBIDDEN`)؛
-- **جلوگیری از تداخل در سطح دیتابیس**: ردیفها مستقیم با SQL و با دور زدن بررسی اپلیکیشن درج
+- **جلوگیری از تداخل در سطح database**: ردیفها مستقیم با SQL و با دور زدن بررسی اپلیکیشن درج
   می شوند و PostgreSQL آنها را با `23P01` روی `ck_appointments_nooverlap` رد می کند؛
 - محدودسازی بر اساس نقش (مشتری فقط نوبتهای خودش را میبیند، نمی تواند وضعیت را تغییر دهد یا خدمت
   ایجاد کند).
 
-## فرانتاند
+## Front-end
 
 ```bash
 cd frontend
@@ -90,17 +90,17 @@ Playwright رابط کاربری واقعی Nuxt را در برابر API واق
 cd frontend
 npx playwright install chromium   # یکبار
 
-# هر دو سرور باید در حال اجرا باشند (API روی :5080 و Nuxt روی :3000)…
+# Both servers must be running (API on :5080, Nuxt on :3000)...
 npm run test:e2e
 
-# …یا بگذارید Playwright خودش فرانتاند را بسازد و سرو کند، در حالی که به API در حال اجرا متصل است
+# ...or let Playwright build and serve the front-end against a running API
 NUXT_PUBLIC_API_BASE=http://localhost:5080 npx playwright test
 
-# در برابر یک محیط ازپیش مستقرشده
+# Against an already-deployed environment
 E2E_BASE_URL=https://staging.example.com npx playwright test
 ```
 
-وقتی Playwright مسئول فرانتاند است، دستور `npm run build` را اجرا و **خروجی عملیاتی** را سرو
+وقتی Playwright مسئول front-end است، دستور `npm run build` را اجرا و **خروجی عملیاتی** را سرو
 می کند، نه سرور توسعه. این موضوع مهم است: سرور توسعه صدها ماژول ES بستهبندینشده را ارسال می کند،
 بنابراین روی یک runner سرد CI ممکن است بسته سمت مشتری دیرتر از زمان انتظار عملیات برسد و تستها
 با نشانهگذاری سروری تعامل کنند که هنوز توسط Vue hydrate نشده است. تست کردن خروجی واقعی، زمان
