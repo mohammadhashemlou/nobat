@@ -151,6 +151,8 @@ function select(cell: Cell) {
         :key="cell.iso"
         type="button"
         :disabled="cell.disabled"
+        :data-iso="cell.iso"
+        data-testid="day-cell"
         class="grid h-10 place-items-center rounded-lg text-sm font-medium tabular-nums transition"
         :class="[
           cell.selected

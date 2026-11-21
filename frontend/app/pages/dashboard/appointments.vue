@@ -133,7 +133,9 @@ const priceLabel = (p: number) => `${persianDigits(p.toLocaleString('en-US'))} �
           <tr v-for="a in rows" :key="a.id" class="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
             <td class="px-4 py-3">
               <p class="font-medium">{{ formatFullDate(a.startAt) }}</p>
-              <p class="text-xs text-muted tabular-nums">{{ formatTime(a.startAt) }}–{{ formatTime(a.endAt) }}</p>
+              <p class="text-xs text-muted tabular-nums">
+                <span dir="ltr">{{ formatTime(a.startAt) }}–{{ formatTime(a.endAt) }}</span>
+              </p>
             </td>
             <td class="px-4 py-3">
               <p class="font-medium">{{ a.customerName }}</p>
@@ -176,7 +178,7 @@ const priceLabel = (p: number) => `${persianDigits(p.toLocaleString('en-US'))} �
             <StatusBadge :status="a.status" />
           </div>
           <div class="mt-2 flex items-center justify-between text-xs text-muted">
-            <span>{{ formatFullDate(a.startAt) }} — {{ formatTime(a.startAt) }}</span>
+            <span>{{ formatFullDate(a.startAt) }} — <span dir="ltr">{{ formatTime(a.startAt) }}</span></span>
             <span class="font-semibold text-brand-600 dark:text-brand-400">{{ priceLabel(a.price) }}</span>
           </div>
           <div class="mt-2 flex gap-1.5">

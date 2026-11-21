@@ -101,3 +101,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+/// <summary>
+/// Exposed so the integration-test host (WebApplicationFactory) can boot the real pipeline.
+/// </summary>
+public partial class Program;
