@@ -17,7 +17,7 @@ public class HolidaysController : ControllerBase
 
     public HolidaysController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>لیست تعطیلات سالن</summary>
+    /// <summary>Salon holidays.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<HolidayDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll([FromQuery] Guid salonId, CancellationToken ct)
@@ -26,7 +26,7 @@ public class HolidaysController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>افزودن تعطیلی</summary>
+    /// <summary>Adds a holiday.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(HolidayDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] AddHolidayBody body, CancellationToken ct)
@@ -41,7 +41,7 @@ public class HolidaysController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { salonId = body.SalonId }, result);
     }
 
-    /// <summary>حذف تعطیلی</summary>
+    /// <summary>Removes a holiday.</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)

@@ -1,25 +1,8 @@
 namespace Nobat.Application.Modules.Appointments.Services;
 
-/// <summary>
-/// Pure availability calculation — no I/O, fully unit-testable.
-/// Works in the business timezone and returns UTC slots.
-/// </summary>
+/// <summary>Turns working hours, breaks and busy intervals into bookable UTC slots.</summary>
 public class AvailabilityCalculator
 {
-    /// <summary>
-    /// Computes bookable slots for a single day.
-    /// </summary>
-    /// <param name="date">Local business date.</param>
-    /// <param name="workStart">Working-hours start (local).</param>
-    /// <param name="workEnd">Working-hours end (local).</param>
-    /// <param name="breakStart">Break start (local), optional.</param>
-    /// <param name="breakEnd">Break end (local), optional.</param>
-    /// <param name="serviceDurationMinutes">Length of the service.</param>
-    /// <param name="slotStepMinutes">Granularity of offered slots.</param>
-    /// <param name="busy">Existing busy intervals in UTC.</param>
-    /// <param name="nowUtc">Current UTC time (slots before this + lead time are dropped).</param>
-    /// <param name="minLeadTimeMinutes">Minimum notice before a slot can be booked.</param>
-    /// <param name="tz">Business timezone.</param>
     public IReadOnlyList<(DateTime StartUtc, DateTime EndUtc)> Calculate(
         DateOnly date,
         TimeOnly workStart,

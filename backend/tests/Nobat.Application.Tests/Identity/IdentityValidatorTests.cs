@@ -12,10 +12,9 @@ public class RegisterCommandValidatorTests
     private static RegisterCommand Valid() => new()
     {
         FullName = "علی رضایی",
-        Email = "ali@example.com",
+        PhoneNumber = "09121234567",
         Password = "Passw0rd",
         ConfirmPassword = "Passw0rd",
-        PhoneNumber = "09121234567",
         Role = UserRole.Customer
     };
 
@@ -25,14 +24,6 @@ public class RegisterCommandValidatorTests
         var result = _sut.TestValidate(Valid());
 
         result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Fact]
-    public void Accepts_RegistrationWithoutPhoneNumber()
-    {
-        var command = Valid() with { PhoneNumber = null };
-
-        _sut.TestValidate(command).ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
@@ -53,13 +44,28 @@ public class RegisterCommandValidatorTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("not-an-email")]
-    [InlineData("ali@")]
-    public void Rejects_InvalidEmail(string email)
+    [InlineData("0912")]
+    [InlineData("9121234567")]
+    [InlineData("091212345678")]
+    [InlineData("0912-123-4567")]
+    [InlineData("0912123456a")]
+    [InlineData("+989121234567")]
+    public void Rejects_MalformedPhoneNumber(string phone)
     {
-        var result = _sut.TestValidate(Valid() with { Email = email });
+        var result = _sut.TestValidate(Valid() with { PhoneNumber = phone });
 
-        result.ShouldHaveValidationErrorFor(x => x.Email);
+        result.ShouldHaveValidationErrorFor(x => x.PhoneNumber)
+            .WithErrorMessage("شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود");
+    }
+
+    [Theory]
+    [InlineData("09120000000")]
+    [InlineData("09999999999")]
+    public void Accepts_ElevenDigitMobile(string phone)
+    {
+        var result = _sut.TestValidate(Valid() with { PhoneNumber = phone });
+
+        result.ShouldNotHaveValidationErrorFor(x => x.PhoneNumber);
     }
 
     [Theory]
@@ -88,18 +94,6 @@ public class RegisterCommandValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.ConfirmPassword);
     }
 
-    [Theory]
-    [InlineData("0912")]
-    [InlineData("9121234567")]
-    [InlineData("091212345678")]
-    [InlineData("0912-123-4567")]
-    public void Rejects_MalformedPhoneNumber(string phone)
-    {
-        var result = _sut.TestValidate(Valid() with { PhoneNumber = phone });
-
-        result.ShouldHaveValidationErrorFor(x => x.PhoneNumber);
-    }
-
     [Fact]
     public void Rejects_AdminRoleSelfRegistration()
     {
@@ -124,23 +118,34 @@ public class LoginCommandValidatorTests
     [Fact]
     public void Accepts_ValidCredentials()
     {
-        var result = _sut.TestValidate(new LoginCommand { Email = "a@b.com", Password = "Passw0rd" });
+        var result = _sut.TestValidate(new LoginCommand { PhoneNumber = "09121234567", Password = "Passw0rd" });
 
         result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
-    public void Rejects_EmptyEmail()
+    public void Rejects_EmptyPhoneNumber()
     {
-        var result = _sut.TestValidate(new LoginCommand { Email = "", Password = "Passw0rd" });
+        var result = _sut.TestValidate(new LoginCommand { PhoneNumber = "", Password = "Passw0rd" });
 
-        result.ShouldHaveValidationErrorFor(x => x.Email);
+        result.ShouldHaveValidationErrorFor(x => x.PhoneNumber);
+    }
+
+    [Theory]
+    [InlineData("0912123456")]
+    [InlineData("091212345678")]
+    [InlineData("08121234567")]
+    public void Rejects_MalformedPhoneNumber(string phone)
+    {
+        var result = _sut.TestValidate(new LoginCommand { PhoneNumber = phone, Password = "Passw0rd" });
+
+        result.ShouldHaveValidationErrorFor(x => x.PhoneNumber);
     }
 
     [Fact]
     public void Rejects_EmptyPassword()
     {
-        var result = _sut.TestValidate(new LoginCommand { Email = "a@b.com", Password = "" });
+        var result = _sut.TestValidate(new LoginCommand { PhoneNumber = "09121234567", Password = "" });
 
         result.ShouldHaveValidationErrorFor(x => x.Password);
     }

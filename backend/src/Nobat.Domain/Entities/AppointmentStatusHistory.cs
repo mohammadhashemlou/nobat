@@ -9,6 +9,5 @@ public class AppointmentStatusHistory : BaseEntity
     public AppointmentStatus Status { get; set; }
     public Guid ChangedByUserId { get; set; }
 
-    // Navigation properties
     public Appointment Appointment { get; set; } = null!;
 }

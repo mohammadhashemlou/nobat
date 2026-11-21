@@ -11,7 +11,6 @@ public class Service : BaseEntity
     public decimal Price { get; set; }
     public bool IsActive { get; set; } = true;
 
-    // Navigation properties
     public Salon Salon { get; set; } = null!;
     public ICollection<BarberService> BarberServices { get; set; } = [];
 }

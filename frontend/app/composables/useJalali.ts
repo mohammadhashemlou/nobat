@@ -1,12 +1,7 @@
 export const BUSINESS_TZ = 'Asia/Tehran'
 
-/**
- * Iran has not observed daylight saving since 2022, so the business timezone is a
- * constant +03:30 offset. Working with a fixed offset (instead of a tz database)
- * keeps every conversion deterministic and independent of the host's timezone —
- * which matters because the server, the CI runner and the browser are rarely all
- * in Tehran.
- */
+// Iran dropped daylight saving in 2022, so +03:30 is a constant. Using a fixed
+// offset instead of a tz database keeps conversions independent of the host zone.
 const BUSINESS_OFFSET_MS = 210 * 60_000
 
 /** Iranian week order: Saturday first. */
@@ -48,13 +43,9 @@ export interface JalaliParts {
 // ---------------------------------------------------------------------------
 // Jalali <-> Gregorian conversion.
 //
-// Implemented arithmetically (the classic jalaali algorithm) rather than through
-// a calendar plugin. Two reasons, both observed in practice:
-//   * `jalaliday` drifts by a day for some dates (2024-01-05 renders as
-//     1402/10/16 instead of 1402/10/15);
-//   * chaining dayjs setters clamps the day-of-month when moving between months
-//     of different lengths, silently producing wrong Esfand dates.
-// This version is pure, deterministic and timezone-independent.
+// Done arithmetically (classic jalaali algorithm) instead of through a calendar
+// plugin: jalaliday drifts by a day on some dates, and chained dayjs setters
+// clamp the day-of-month when crossing months of different lengths.
 // ---------------------------------------------------------------------------
 
 const JALALI_BREAKS = [
@@ -245,13 +236,11 @@ export function useJalali() {
     return withPersianDigits ? persianDigits(out) : out
   }
 
-  /** ۲ آذر ۱۴۰۵ */
   function formatLongDate(date: DateInput): string {
     const p = parts(date)
     return persianDigits(`${p.day} ${JALALI_MONTHS[p.month - 1]} ${p.year}`)
   }
 
-  /** دوشنبه ۲ آذر ۱۴۰۵ */
   function formatFullDate(date: DateInput): string {
     const p = parts(date)
     const c = tehranWallClock(date)
@@ -265,7 +254,7 @@ export function useJalali() {
     return persianDigits(`${pad2(c.hour)}:${pad2(c.minute)}`)
   }
 
-  /** Relative label: امروز / فردا / دیروز, otherwise the full Jalali date. */
+  /** Today / tomorrow / yesterday, otherwise the full date. */
   function relativeDayLabel(date: DateInput): string {
     const dayMs = (d: DateInput) => {
       const c = tehranWallClock(d)

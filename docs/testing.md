@@ -7,7 +7,7 @@ The project has three test layers. All of them run in CI (`.github/workflows/ci.
 | Domain + application unit tests | xUnit | `backend/tests/Nobat.Domain.Tests`, `backend/tests/Nobat.Application.Tests` | 77 |
 | API integration tests | xUnit + `WebApplicationFactory` + PostgreSQL | `backend/tests/Nobat.Api.Tests` | 37 |
 | Frontend unit/component tests | Vitest + `@vue/test-utils` | `frontend/tests/unit` | 55 |
-| End-to-end | Playwright | `frontend/tests/e2e` | 12 |
+| End-to-end | Playwright | `frontend/tests/e2e` | 15 |
 
 ## Backend
 

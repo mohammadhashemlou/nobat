@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'admin' })
+definePageMeta({ layout: 'panel', middleware: 'admin' })
 
 useHead({ title: 'نمای کلی | پنل مدیریت' })
 
@@ -90,7 +90,7 @@ const priceLabel = (p: number) => `${persianDigits(p.toLocaleString('en-US'))} �
 <template>
   <div>
     <div class="mb-6">
-      <h1 class="text-xl font-extrabold sm:text-2xl">سلام {{ auth.user?.fullName }} 👋</h1>
+      <h1 class="text-xl font-extrabold sm:text-2xl">سلام {{ auth.user?.fullName }}</h1>
       <p class="mt-1 text-sm text-muted">
         نمای کلی سالن «{{ salon?.name || '—' }}» در {{ formatFullDate(todayIso) }}
       </p>
@@ -120,7 +120,7 @@ const priceLabel = (p: number) => `${persianDigits(p.toLocaleString('en-US'))} �
       <section class="mt-6">
         <div class="mb-3 flex items-center justify-between">
           <h2 class="text-base font-bold">برنامه امروز</h2>
-          <UButton to="/dashboard/appointments" variant="link" size="sm" trailing-icon="i-lucide-arrow-left">
+          <UButton to="/panel/appointments" variant="link" size="sm" trailing-icon="i-lucide-arrow-left">
             همه نوبت‌ها
           </UButton>
         </div>

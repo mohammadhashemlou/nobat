@@ -6,14 +6,16 @@ useHead({ title: 'ورود | نوبت' })
 const auth = useAuthStore()
 const route = useRoute()
 
-const form = reactive({ email: '', password: '' })
+const form = reactive({ phoneNumber: '', password: '' })
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+const phoneValid = computed(() => isValidMobile(form.phoneNumber))
+
 const redirectTarget = computed(() => {
-  const r = route.query.redirect as string | undefined
-  if (r) return r
-  return auth.isCustomer ? '/my' : '/dashboard'
+  const requested = route.query.redirect as string | undefined
+  if (requested) return requested
+  return auth.isCustomer ? '/my' : '/panel'
 })
 
 onMounted(() => {
@@ -21,10 +23,13 @@ onMounted(() => {
 })
 
 async function submit() {
+  if (!phoneValid.value || !form.password) return
+
   error.value = null
   loading.value = true
+
   try {
-    await auth.login(form.email.trim(), form.password)
+    await auth.login(form.phoneNumber, form.password)
     await navigateTo(redirectTarget.value)
   } catch (e: any) {
     error.value = e?.message || 'ورود ناموفق بود'
@@ -53,29 +58,27 @@ async function submit() {
         :title="error"
       />
 
-      <UFormField label="ایمیل" name="email" required>
+      <UFormField
+        label="شماره موبایل"
+        :error="form.phoneNumber && !phoneValid ? 'شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود' : undefined"
+        required
+      >
         <UInput
-          v-model="form.email"
-          type="email"
+          :model-value="form.phoneNumber"
           dir="ltr"
-          placeholder="you@example.com"
-          icon="i-lucide-mail"
-          autocomplete="email"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="09xxxxxxxxx"
+          icon="i-lucide-smartphone"
           size="lg"
           class="w-full"
+          maxlength="11"
+          @update:model-value="form.phoneNumber = normalizePhoneInput($event)"
         />
       </UFormField>
 
-      <UFormField label="رمز عبور" name="password" required>
-        <UInput
-          v-model="form.password"
-          type="password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          autocomplete="current-password"
-          size="lg"
-          class="w-full"
-        />
+      <UFormField label="رمز عبور" required>
+        <PasswordInput v-model="form.password" autocomplete="current-password" />
       </UFormField>
 
       <UButton
@@ -83,7 +86,7 @@ async function submit() {
         size="lg"
         block
         :loading="loading"
-        :disabled="!form.email || !form.password"
+        :disabled="!phoneValid || !form.password"
       >
         ورود
       </UButton>
@@ -98,7 +101,7 @@ async function submit() {
 
     <div class="mt-5 rounded-xl bg-gray-100 p-3 text-center text-xs text-muted dark:bg-gray-900">
       حساب نمونه مدیر:
-      <span dir="ltr" class="font-mono">admin@nobat.local / Admin@123456</span>
+      <span dir="ltr" class="font-mono">09120000000 / Admin@123456</span>
     </div>
   </div>
 </template>

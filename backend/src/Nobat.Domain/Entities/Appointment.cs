@@ -24,7 +24,6 @@ public class Appointment : BaseEntity
     public string? Notes { get; set; }
     public DateTime? CancelledAt { get; set; }
 
-    // Navigation properties
     public Salon Salon { get; set; } = null!;
     public Barber Barber { get; set; } = null!;
     public ApplicationUser Customer { get; set; } = null!;

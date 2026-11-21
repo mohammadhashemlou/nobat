@@ -13,9 +13,8 @@ public record CreateBarberCommand : IRequest<BarberDto>
 {
     public Guid SalonId { get; init; }
     public string FullName { get; init; } = string.Empty;
-    public string Email { get; init; } = string.Empty;
+    public string PhoneNumber { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
-    public string? PhoneNumber { get; init; }
     public string? Bio { get; init; }
     public string? AvatarUrl { get; init; }
     public List<Guid> ServiceIds { get; init; } = [];
@@ -27,12 +26,14 @@ public class CreateBarberCommandValidator : AbstractValidator<CreateBarberComman
     {
         RuleFor(x => x.SalonId).NotEmpty();
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(150);
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.PhoneNumber)
+            .NotEmpty().WithMessage("شماره موبایل الزامی است")
+            .Matches(@"^09\d{9}$").WithMessage("شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود");
         RuleFor(x => x.Password)
-            .NotEmpty()
-            .MinimumLength(8)
-            .Must(p => p.Any(char.IsDigit))
-            .Must(p => p.Any(char.IsUpper));
+            .NotEmpty().WithMessage("رمز عبور الزامی است")
+            .MinimumLength(8).WithMessage("رمز عبور باید حداقل ۸ کاراکتر باشد")
+            .Must(p => p.Any(char.IsDigit)).WithMessage("رمز عبور باید حداقل یک عدد داشته باشد")
+            .Must(p => p.Any(char.IsUpper)).WithMessage("رمز عبور باید حداقل یک حرف بزرگ داشته باشد");
         RuleFor(x => x.Bio).MaximumLength(1000);
         RuleFor(x => x.AvatarUrl).MaximumLength(500);
     }
@@ -51,26 +52,30 @@ public class CreateBarberHandler : IRequestHandler<CreateBarberCommand, BarberDt
 
     public async Task<BarberDto> Handle(CreateBarberCommand request, CancellationToken ct)
     {
-        var salonExists = await _db.Salons.AnyAsync(s => s.Id == request.SalonId, ct);
-        if (!salonExists)
+        if (!await _db.Salons.AnyAsync(s => s.Id == request.SalonId, ct))
+        {
             throw new DomainException("سالن یافت نشد", "NOT_FOUND");
+        }
 
-        if (await _identity.UserExistsByEmailAsync(request.Email))
-            throw new DomainException("کاربری با این ایمیل قبلاً ثبت شده است", "EMAIL_EXISTS");
+        var phoneNumber = request.PhoneNumber.Trim();
 
-        // Create the barber's user account
+        if (await _identity.PhoneNumberExistsAsync(phoneNumber))
+        {
+            throw new DomainException("این شماره موبایل قبلاً ثبت شده است", "PHONE_EXISTS");
+        }
+
         var (success, userIdStr, error) = await _identity.CreateUserAsync(
-            request.Email, request.Password, request.FullName, UserRole.Barber, request.PhoneNumber);
+            phoneNumber, request.Password, request.FullName.Trim(), UserRole.Barber);
 
         if (!success || userIdStr is null)
+        {
             throw new DomainException(error ?? "خطا در ایجاد حساب آرایشگر", "REGISTRATION_FAILED");
-
-        var userId = Guid.Parse(userIdStr);
+        }
 
         var barber = new Barber
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            UserId = Guid.Parse(userIdStr),
             SalonId = request.SalonId,
             FullName = request.FullName.Trim(),
             Bio = request.Bio?.Trim(),
@@ -98,8 +103,7 @@ public class CreateBarberHandler : IRequestHandler<CreateBarberCommand, BarberDt
             UserId = barber.UserId,
             SalonId = barber.SalonId,
             FullName = barber.FullName,
-            Email = request.Email,
-            PhoneNumber = request.PhoneNumber,
+            PhoneNumber = phoneNumber,
             Bio = barber.Bio,
             AvatarUrl = barber.AvatarUrl,
             IsActive = barber.IsActive,

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { ADMIN_EMAIL, ADMIN_PASSWORD, gotoApp } from './helpers'
+import { ADMIN_PASSWORD, ADMIN_PHONE, gotoApp } from './helpers'
 
 test.describe('public pages', () => {
   test('home page renders in Persian and RTL', async ({ page }) => {
@@ -42,13 +42,47 @@ test.describe('public pages', () => {
     const response = await page.goto('/salon/default')
     expect(response?.status()).toBe(200)
   })
+
+  test('the favicon is served', async ({ page, request }) => {
+    await gotoApp(page, '/')
+
+    const href = await page.locator('link[rel="icon"]').first().getAttribute('href')
+    expect(href).toBe('/favicon.svg')
+
+    const icon = await request.get(href!)
+    expect(icon.status()).toBe(200)
+    expect(icon.headers()['content-type']).toContain('svg')
+  })
 })
 
 test.describe('authentication', () => {
+  test('the password can be revealed before submitting', async ({ page }) => {
+    await gotoApp(page, '/login')
+
+    const password = page.getByLabel(/رمز عبور/)
+    await expect(password).toHaveAttribute('type', 'password')
+
+    await page.getByRole('button', { name: 'نمایش گذرواژه' }).click()
+    await expect(password).toHaveAttribute('type', 'text')
+
+    await page.getByRole('button', { name: 'پنهان کردن گذرواژه' }).click()
+    await expect(password).toHaveAttribute('type', 'password')
+  })
+
+  test('the mobile field accepts only digits and eleven of them', async ({ page }) => {
+    await gotoApp(page, '/login')
+
+    const phone = page.getByLabel(/شماره موبایل/)
+    await phone.fill('')
+    await phone.pressSequentially('0912abc1234567')
+
+    await expect(phone).toHaveValue('09121234567')
+  })
+
   test('wrong credentials surface a Persian error and stay on the page', async ({ page }) => {
     await gotoApp(page, '/login')
 
-    await page.getByLabel(/ایمیل/).fill(ADMIN_EMAIL)
+    await page.getByLabel(/شماره موبایل/).fill(ADMIN_PHONE)
     await page.getByLabel(/رمز عبور/).fill('DefinitelyWrong@123')
     await page.getByRole('button', { name: /ورود/ }).click()
 
@@ -56,25 +90,25 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('admin lands on the dashboard and can sign out', async ({ page }) => {
+  test('admin lands on the panel and can sign out', async ({ page }) => {
     await gotoApp(page, '/login')
 
-    await page.getByLabel(/ایمیل/).fill(ADMIN_EMAIL)
+    await page.getByLabel(/شماره موبایل/).fill(ADMIN_PHONE)
     await page.getByLabel(/رمز عبور/).fill(ADMIN_PASSWORD)
     await page.getByRole('button', { name: /ورود/ }).click()
 
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
+    await expect(page).toHaveURL(/\/panel/, { timeout: 30_000 })
     await expect(page.locator('body')).toContainText(/داشبورد|مدیریت|نوبت/)
 
-    // Sign out from the dashboard sidebar.
+    // Sign out from the panel sidebar.
     await page.getByRole('button', { name: 'خروج از حساب' }).click()
 
     await expect(page).toHaveURL(/\/login|\/$/, { timeout: 20_000 })
     await expect(page.locator('body')).toContainText(/ورود/)
   })
 
-  test('the dashboard is protected for anonymous visitors', async ({ page }) => {
-    await gotoApp(page, '/dashboard')
+  test('the panel is protected for anonymous visitors', async ({ page }) => {
+    await gotoApp(page, '/panel')
 
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 })
   })

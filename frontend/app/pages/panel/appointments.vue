@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'admin' })
+definePageMeta({ layout: 'panel', middleware: 'admin' })
 
 useHead({ title: 'نوبت‌ها | پنل مدیریت' })
 
@@ -15,8 +15,8 @@ const filter = ref<'today' | 'upcoming' | 'all'>('today')
 const statusFilter = ref<string>('all')
 const busyId = ref<string | null>(null)
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true
   error.value = null
   try {
     const s = await ensure()
@@ -25,14 +25,17 @@ async function load() {
     if (statusFilter.value !== 'all') query.status = statusFilter.value
     appointments.value = await api<Appointment[]>('/api/v1/appointments', { query })
   } catch (e: any) {
-    error.value = e?.message || 'بارگذاری ناموفق بود'
+    if (!silent) error.value = e?.message || 'بارگذاری ناموفق بود'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
-onMounted(load)
-watch([filter, statusFilter], load)
+onMounted(() => load())
+watch([filter, statusFilter], () => load())
+
+// Customers book and cancel from their own devices, so keep the board current.
+useAutoRefresh(load, { intervalMs: 30_000 })
 
 const todayIso = todayApiDate()
 

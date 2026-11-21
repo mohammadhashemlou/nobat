@@ -25,6 +25,8 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#0f172a' }
       ],
       link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/favicon.svg' },
         { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' },
         {
           rel: 'stylesheet',

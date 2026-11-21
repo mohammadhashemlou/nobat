@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'admin' })
+definePageMeta({ layout: 'panel', middleware: 'admin' })
 
 useHead({ title: 'خدمات | پنل مدیریت' })
 

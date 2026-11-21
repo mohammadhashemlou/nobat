@@ -10,8 +10,8 @@ const navItems = [
 const isActive = (to: string) =>
   to === '/' ? route.path === '/' : route.path.startsWith(to)
 
-const dashboardLink = computed(() =>
-  auth.isCustomer ? '/my' : '/dashboard'
+const panelLink = computed(() =>
+  auth.isCustomer ? '/my' : '/panel'
 )
 
 const mobileOpen = ref(false)
@@ -53,7 +53,7 @@ const mobileOpen = ref(false)
 
           <template v-if="auth.isAuthenticated">
             <UButton
-              :to="dashboardLink"
+              :to="panelLink"
               variant="soft"
               color="neutral"
               icon="i-lucide-layout-dashboard"
@@ -65,7 +65,7 @@ const mobileOpen = ref(false)
             <UDropdownMenu
               :items="[[
                 { label: auth.user?.fullName || '', type: 'label' },
-                { label: auth.isCustomer ? 'نوبت‌های من' : 'پنل مدیریت', icon: 'i-lucide-layout-dashboard', to: dashboardLink },
+                { label: auth.isCustomer ? 'نوبت‌های من' : 'پنل مدیریت', icon: 'i-lucide-layout-dashboard', to: panelLink },
                 { label: 'خروج', icon: 'i-lucide-log-out', onSelect: () => auth.logout() }
               ]]"
             >

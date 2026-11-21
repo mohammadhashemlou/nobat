@@ -31,29 +31,22 @@ public class IdentityService : IIdentityService
         _jwtOptions = jwtOptions.Value;
     }
 
-    public async Task<bool> UserExistsByEmailAsync(string email)
+    public async Task<bool> PhoneNumberExistsAsync(string phoneNumber)
     {
-        return await _userManager.FindByEmailAsync(email) != null;
+        return await _userManager.FindByNameAsync(phoneNumber) != null;
     }
 
     public async Task<(bool Success, string? UserId, string? Error)> CreateUserAsync(
-        string email, string password, string fullName, UserRole role)
-    {
-        return await CreateUserAsync(email, password, fullName, role, null);
-    }
-
-    public async Task<(bool Success, string? UserId, string? Error)> CreateUserAsync(
-        string email, string password, string fullName, UserRole role, string? phoneNumber)
+        string phoneNumber, string password, string fullName, UserRole role)
     {
         var user = new ApplicationUser
         {
-            UserName = email,
-            Email = email,
+            UserName = phoneNumber,
+            PhoneNumber = phoneNumber,
             FullName = fullName,
             Role = role,
             IsActive = true,
-            EmailConfirmed = true,
-            PhoneNumber = phoneNumber
+            PhoneNumberConfirmed = true
         };
 
         var result = await _userManager.CreateAsync(user, password);
@@ -69,16 +62,15 @@ public class IdentityService : IIdentityService
     }
 
     public async Task<(bool Success, Guid UserId, string FullName, UserRole Role)> ValidateCredentialsAsync(
-        string email, string password)
+        string phoneNumber, string password)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await _userManager.FindByNameAsync(phoneNumber);
         if (user == null || !user.IsActive)
         {
             return (false, Guid.Empty, string.Empty, UserRole.Customer);
         }
 
-        var result = await _userManager.CheckPasswordAsync(user, password);
-        if (!result)
+        if (!await _userManager.CheckPasswordAsync(user, password))
         {
             return (false, Guid.Empty, string.Empty, UserRole.Customer);
         }
@@ -95,14 +87,13 @@ public class IdentityService : IIdentityService
         }
     }
 
-    public async Task<string> GenerateAccessTokenAsync(Guid userId, string email, string fullName, UserRole role)
+    public Task<string> GenerateAccessTokenAsync(Guid userId, string phoneNumber, string fullName, UserRole role)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Name, fullName),
-            new(ClaimTypes.Role, role.ToString()),
+            new("phone", phoneNumber),
             new("role", role.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Iat,
@@ -120,7 +111,7 @@ public class IdentityService : IIdentityService
             expires: DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
     }
 
     public async Task<(string Token, DateTime ExpiresAt)> GenerateRefreshTokenAsync(Guid userId)
@@ -132,19 +123,17 @@ public class IdentityService : IIdentityService
         var token = Convert.ToBase64String(randomBytes);
         var expiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays);
 
-        var refreshToken = new RefreshToken
+        _dbContext.RefreshTokens.Add(new RefreshToken
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             Token = token,
             ExpiresAt = expiresAt,
             CreatedAt = DateTime.UtcNow
-        };
-
-        _dbContext.RefreshTokens.Add(refreshToken);
+        });
         await _dbContext.SaveChangesAsync();
 
-        // Format: {userId}|{token} for easy extraction during refresh
+        // The user id travels with the token so refresh does not need a second lookup.
         return ($"{userId}|{token}", expiresAt);
     }
 
@@ -168,14 +157,11 @@ public class IdentityService : IIdentityService
         }
     }
 
-    public async Task<(string Email, string FullName, UserRole Role)> GetUserByIdAsync(Guid userId)
+    public async Task<(string PhoneNumber, string FullName, UserRole Role)> GetUserByIdAsync(Guid userId)
     {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-        {
-            throw new DomainException("کاربر یافت نشد", "USER_NOT_FOUND");
-        }
+        var user = await _userManager.FindByIdAsync(userId.ToString())
+            ?? throw new DomainException("کاربر یافت نشد", "USER_NOT_FOUND");
 
-        return (user.Email ?? string.Empty, user.FullName, user.Role);
+        return (user.PhoneNumber ?? string.Empty, user.FullName, user.Role);
     }
 }

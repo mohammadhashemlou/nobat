@@ -18,7 +18,9 @@ public class GetBarbersHandler : IRequestHandler<GetBarbersQuery, List<BarberDto
         var query = _db.Barbers.AsNoTracking().Where(b => b.SalonId == request.SalonId);
 
         if (!request.IncludeInactive)
+        {
             query = query.Where(b => b.IsActive);
+        }
 
         var barbers = await query
             .OrderBy(b => b.FullName)
@@ -35,20 +37,17 @@ public class GetBarbersHandler : IRequestHandler<GetBarbersQuery, List<BarberDto
             })
             .ToListAsync(ct);
 
-        // Enrich with user contact info
         var userIds = barbers.Select(b => b.UserId).ToList();
-        var users = await _db.Users
+        var phones = await _db.Users
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Email, u.PhoneNumber })
-            .ToListAsync(ct);
+            .Select(u => new { u.Id, u.PhoneNumber })
+            .ToDictionaryAsync(u => u.Id, u => u.PhoneNumber, ct);
 
-        var map = users.ToDictionary(u => u.Id);
-        return barbers.Select(b =>
-        {
-            if (map.TryGetValue(b.UserId, out var u))
-                return b with { Email = u.Email, PhoneNumber = u.PhoneNumber };
-            return b;
-        }).ToList();
+        return barbers
+            .Select(b => phones.TryGetValue(b.UserId, out var phone)
+                ? b with { PhoneNumber = phone }
+                : b)
+            .ToList();
     }
 }

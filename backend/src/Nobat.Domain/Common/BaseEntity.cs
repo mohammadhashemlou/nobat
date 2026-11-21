@@ -1,9 +1,6 @@
 namespace Nobat.Domain.Common;
 
-/// <summary>
-/// Base class for all entities with audit fields.
-/// Timestamps are stored in UTC.
-/// </summary>
+/// <summary>Audit fields shared by every entity. Timestamps are UTC.</summary>
 public abstract class BaseEntity
 {
     public Guid Id { get; set; }

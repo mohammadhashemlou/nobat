@@ -11,7 +11,6 @@ public class Barber : BaseEntity
     public string? AvatarUrl { get; set; }
     public bool IsActive { get; set; } = true;
 
-    // Navigation properties
     public Salon Salon { get; set; } = null!;
     public ICollection<BarberService> BarberServices { get; set; } = [];
     public ICollection<WorkingHours> WorkingHours { get; set; } = [];

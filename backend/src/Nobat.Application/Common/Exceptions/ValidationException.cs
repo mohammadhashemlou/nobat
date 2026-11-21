@@ -1,9 +1,6 @@
 namespace Nobat.Application.Common.Exceptions;
 
-/// <summary>
-/// Thrown by the validation pipeline behavior. Carries field-level errors
-/// so the API can emit a structured RFC 7807 response.
-/// </summary>
+/// <summary>Field-level validation failures, rendered as an RFC 7807 response.</summary>
 public class ValidationException : Exception
 {
     public IDictionary<string, string[]> Errors { get; }

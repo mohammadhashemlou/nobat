@@ -6,10 +6,7 @@ using Nobat.Domain.Common;
 
 namespace Nobat.Api.Middleware;
 
-/// <summary>
-/// Centralized exception handling middleware that converts exceptions
-/// into RFC 7807 ProblemDetails responses.
-/// </summary>
+/// <summary>Turns exceptions into RFC 7807 ProblemDetails responses.</summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
@@ -124,7 +121,7 @@ public class ExceptionHandlingMiddleware
 
     private static HttpStatusCode MapDomainCode(string code) => code switch
     {
-        "EMAIL_EXISTS" => HttpStatusCode.Conflict,
+        "PHONE_EXISTS" => HttpStatusCode.Conflict,
         "INVALID_CREDENTIALS" => HttpStatusCode.Unauthorized,
         "INVALID_REFRESH_TOKEN" => HttpStatusCode.Unauthorized,
         "VALIDATION_ERROR" => HttpStatusCode.BadRequest,

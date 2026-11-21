@@ -5,7 +5,7 @@ using Nobat.Application.Modules.Salons.DTOs;
 
 namespace Nobat.Application.Modules.Salons.Queries;
 
-/// <summary>دریافت اطلاعات سالن جاری (پنل مدیریت)</summary>
+/// <summary>Salon data for the panel.</summary>
 public record GetSalonQuery(Guid SalonId) : IRequest<SalonDto?>;
 
 public class GetSalonHandler : IRequestHandler<GetSalonQuery, SalonDto?>

@@ -16,7 +16,7 @@ namespace Nobat.Api.Tests.Infrastructure;
 /// </summary>
 public sealed class NobatApiFixture : IAsyncLifetime
 {
-    public const string AdminEmail = "admin@nobat.local";
+    public const string AdminPhoneNumber = "09120000000";
     public const string AdminPassword = "Admin@123456";
 
     private string _database = string.Empty;
@@ -38,13 +38,18 @@ public sealed class NobatApiFixture : IAsyncLifetime
 
     public static TimeZoneInfo TehranZone { get; } = ResolveTehran();
 
+    /// <summary>A mobile number that is unique within a test run.</summary>
+    public static string UniquePhone()
+        => "09" + Random.Shared.Next(100_000_000, 999_999_999);
+
     public async Task InitializeAsync()
     {
         if (!TestDatabase.IsAvailable)
             return;
 
         // PostgreSQL identifiers are limited to 63 bytes; a 28-char name keeps us well clear.
-        _database = ("nobat_test_" + Guid.NewGuid().ToString("N"))[..28];        TestDatabase.Create(_database);
+        _database = ("nobat_test_" + Guid.NewGuid().ToString("N"))[..28];
+        TestDatabase.Create(_database);
 
         Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -53,7 +58,7 @@ public sealed class NobatApiFixture : IAsyncLifetime
         });
 
         Client = Factory.CreateClient();
-        AdminToken = await SignInAsync(AdminEmail, AdminPassword);
+        AdminToken = await SignInAsync(AdminPhoneNumber, AdminPassword);
         Client.WithToken(AdminToken);
 
         var salon = await Client.GetJsonAsync<SalonDto>("/api/v1/salons/default");
@@ -72,43 +77,38 @@ public sealed class NobatApiFixture : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    // ---------------------------------------------------------------- auth helpers
-
-    public async Task<string> SignInAsync(string email, string password)
+    public async Task<string> SignInAsync(string phoneNumber, string password)
     {
         using var anonymous = Factory.CreateClient();
         var response = await anonymous.PostAsJsonAsync(
             "/api/v1/auth/login",
-            new { email, password });
+            new { phoneNumber, password });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.ReadAsync<LoginResponse>();
         return payload.AccessToken;
     }
 
-    /// <summary>Registers a fresh customer and returns (token, userId, email).</summary>
-    public async Task<(string Token, Guid UserId, string Email)> CreateCustomerAsync(string? email = null)
+    /// <summary>Registers a fresh customer and returns (token, userId, phoneNumber).</summary>
+    public async Task<(string Token, Guid UserId, string PhoneNumber)> CreateCustomerAsync(string? phoneNumber = null)
     {
-        email ??= $"customer-{Guid.NewGuid():N}@test.local";
+        phoneNumber ??= UniquePhone();
 
         using var anonymous = Factory.CreateClient();
         var register = await anonymous.PostAsJsonAsync("/api/v1/auth/register", new
         {
             fullName = "مشتری تست",
-            email,
+            phoneNumber,
             password = "Test@12345",
             confirmPassword = "Test@12345",
-            phoneNumber = "09120000000",
             role = 2 // Customer
         });
 
         Assert.Equal(HttpStatusCode.Created, register.StatusCode);
         var created = await register.ReadAsync<RegisterResponse>();
 
-        return (await SignInAsync(email, "Test@12345"), created.UserId, email);
+        return (await SignInAsync(phoneNumber, "Test@12345"), created.UserId, phoneNumber);
     }
-
-    // ---------------------------------------------------------------- catalog helpers
 
     public async Task<ServiceDto> CreateServiceAsync(
         string name = "اصلاح سر",
@@ -132,18 +132,17 @@ public sealed class NobatApiFixture : IAsyncLifetime
 
     public async Task<BarberDto> CreateBarberAsync(
         IEnumerable<Guid> serviceIds,
-        string? email = null)
+        string? phoneNumber = null)
     {
         Client.WithToken(AdminToken);
-        email ??= $"barber-{Guid.NewGuid():N}@test.local";
+        phoneNumber ??= UniquePhone();
 
         var response = await Client.PostAsJsonAsync("/api/v1/barbers", new
         {
             salonId = SalonId,
             fullName = "آرایشگر تست",
-            email,
+            phoneNumber,
             password = "Barber@12345",
-            phoneNumber = "09121111111",
             bio = "متخصص اصلاح",
             avatarUrl = (string?)null,
             serviceIds = serviceIds.ToArray()
@@ -195,8 +194,6 @@ public sealed class NobatApiFixture : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
-
-    // ---------------------------------------------------------------- date helpers
 
     /// <summary>Maps a .NET weekday to the Iranian week (Saturday = 0 ... Friday = 6).</summary>
     public static int IranianDayOfWeek(DateOnly date) => date.DayOfWeek switch

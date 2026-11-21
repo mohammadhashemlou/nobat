@@ -11,7 +11,6 @@ public class Salon : BaseEntity
     public string? Description { get; set; }
     public string DefaultTimezone { get; set; } = "Asia/Tehran";
 
-    // Navigation properties
     public ICollection<Barber> Barbers { get; set; } = [];
     public ICollection<Service> Services { get; set; } = [];
     public ICollection<Holiday> Holidays { get; set; } = [];

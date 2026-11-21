@@ -21,7 +21,7 @@ public class AuthController : ControllerBase
         _currentUser = currentUser;
     }
 
-    /// <summary>ثبت‌نام کاربر جدید (مشتری یا آرایشگر)</summary>
+    /// <summary>Registers a new customer or barber account.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status201Created)]
@@ -29,21 +29,19 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct)
     {
-        var command = new RegisterCommand
+        var result = await _mediator.Send(new RegisterCommand
         {
             FullName = request.FullName,
-            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
             Password = request.Password,
             ConfirmPassword = request.ConfirmPassword,
-            PhoneNumber = request.PhoneNumber,
             Role = request.Role
-        };
+        }, ct);
 
-        var result = await _mediator.Send(command, ct);
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
-    /// <summary>ورود و دریافت توکن دسترسی</summary>
+    /// <summary>Signs in with a mobile number and password.</summary>
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
@@ -52,14 +50,14 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(new LoginCommand
         {
-            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
             Password = request.Password
         }, ct);
 
         return Ok(result);
     }
 
-    /// <summary>تمدید توکن دسترسی با استفاده از توکن بازنشانی</summary>
+    /// <summary>Exchanges a refresh token for a new access token.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
@@ -74,7 +72,7 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>اطلاعات کاربر جاری</summary>
+    /// <summary>Returns the signed-in user.</summary>
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -84,7 +82,7 @@ public class AuthController : ControllerBase
         return Ok(new
         {
             id = _currentUser.UserId,
-            email = _currentUser.Email,
+            phoneNumber = _currentUser.PhoneNumber,
             fullName = _currentUser.FullName,
             role = _currentUser.Role?.ToString()
         });

@@ -1,18 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
-/**
- * End-to-end configuration.
- *
- * The suite drives the real Nuxt app against the real API, so both must be reachable.
- * Set E2E_BASE_URL / E2E_API_URL to point at an already-running stack (CI, staging);
- * otherwise Playwright builds the app and serves the production output on :3000 and
- * expects the API on :5080.
- *
- * The production build is deliberate: the dev server ships hundreds of unbundled
- * ES modules, so on a cold CI runner the client bundle can take longer to arrive
- * than the actionability timeout. Serving the real artifact keeps hydration in the
- * sub-second range — and it is what actually ships, so it is what should be tested.
- */
+// Point E2E_BASE_URL / E2E_API_URL at an already-running stack, or let Playwright
+// build the app and serve the production output on :3000 against the API on :5080.
+// The production build matters: the dev server ships unbundled ES modules, which on
+// a cold CI runner can arrive later than the actionability timeout.
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 
 export default defineConfig({

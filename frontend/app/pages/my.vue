@@ -13,19 +13,22 @@ const error = ref<string | null>(null)
 const activeTab = ref<'upcoming' | 'past'>('upcoming')
 const cancellingId = ref<string | null>(null)
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true
   error.value = null
   try {
     appointments.value = await api<Appointment[]>('/api/v1/appointments')
   } catch (e: any) {
-    error.value = e?.message || 'بارگذاری نوبت‌ها ناموفق بود'
+    if (!silent) error.value = e?.message || 'بارگذاری نوبت‌ها ناموفق بود'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
-onMounted(load)
+onMounted(() => load())
+
+// The salon may cancel or reschedule from the panel while this page is open.
+useAutoRefresh(load, { intervalMs: 45_000 })
 
 const now = Date.now()
 

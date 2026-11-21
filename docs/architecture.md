@@ -37,9 +37,12 @@ The Domain layer has zero external dependencies. Application depends only on Dom
 ## Database Schema
 
 ### Users (ASP.NET Core Identity)
-- Id, UserName, Email, FullName, PhoneNumber
+- Id, UserName (= mobile number), FullName, PhoneNumber
 - Role: Admin | Barber | Customer
-- LockoutEnd, EmailConfirmed, PhoneNumberConfirmed
+- LockoutEnd, PhoneNumberConfirmed
+
+Email is not collected: the mobile number is the login identifier, so `UserName` and
+`PhoneNumber` hold the same 11-digit value and `RequireUniqueEmail` is off.
 
 ### Salons
 - Id, Name, Slug, Address, Phone, Description
@@ -110,9 +113,8 @@ The Domain layer has zero external dependencies. Application depends only on Dom
 
 ## Authentication
 
-- JWT Bearer tokens
-- Access token: 15 minutes
-- Refresh token: 7 days
+- Sign in with mobile number + password (no email anywhere)
+- JWT Bearer tokens, 15-minute access token, 7-day rotating refresh token
 - Roles: Admin, Barber, Customer
 - ASP.NET Core Identity for user management
 

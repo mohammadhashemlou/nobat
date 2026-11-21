@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'admin' })
+definePageMeta({ layout: 'panel', middleware: 'admin' })
 
 useHead({ title: 'ساعات کاری | پنل مدیریت' })
 
@@ -150,7 +150,7 @@ function copyToAll() {
         title="آرایشگری وجود ندارد"
         description="ابتدا از بخش آرایشگران، آرایشگر اضافه کنید."
         action-label="افزودن آرایشگر"
-        action-to="/dashboard/barbers"
+        action-to="/panel/barbers"
       />
     </div>
 

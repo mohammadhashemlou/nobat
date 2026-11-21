@@ -16,7 +16,7 @@ public class SalonsController : ControllerBase
 
     public SalonsController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>صفحه عمومی سالن (خدمات، قیمت‌ها، آرایشگران)</summary>
+    /// <summary>Public salon page: services, prices and barbers.</summary>
     [HttpGet("{slug}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(PublicSalonDto), StatusCodes.Status200OK)]
@@ -27,7 +27,7 @@ public class SalonsController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
-    /// <summary>دریافت اطلاعات سالن برای پنل مدیریت</summary>
+    /// <summary>Salon details for the panel.</summary>
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Admin,Barber")]
     [ProducesResponseType(typeof(SalonDto), StatusCodes.Status200OK)]
@@ -37,7 +37,7 @@ public class SalonsController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
-    /// <summary>ویرایش اطلاعات سالن</summary>
+    /// <summary>Updates salon details.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(SalonDto), StatusCodes.Status200OK)]

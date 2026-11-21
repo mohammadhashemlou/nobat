@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'admin' })
+definePageMeta({ layout: 'panel', middleware: 'admin' })
 
 useHead({ title: 'آرایشگران | پنل مدیریت' })
 
@@ -20,9 +20,8 @@ const formError = ref<string | null>(null)
 
 const form = reactive({
   fullName: '',
-  email: '',
-  password: '',
   phoneNumber: '',
+  password: '',
   bio: '',
   isActive: true,
   serviceIds: [] as string[]
@@ -52,9 +51,8 @@ function openCreate() {
   editing.value = null
   Object.assign(form, {
     fullName: '',
-    email: '',
-    password: '',
     phoneNumber: '',
+    password: '',
     bio: '',
     isActive: true,
     serviceIds: []
@@ -67,9 +65,8 @@ function openEdit(b: BarberAdmin) {
   editing.value = b
   Object.assign(form, {
     fullName: b.fullName,
-    email: b.email || '',
-    password: '',
     phoneNumber: b.phoneNumber || '',
+    password: '',
     bio: b.bio || '',
     isActive: b.isActive,
     serviceIds: [...b.serviceIds]
@@ -107,8 +104,8 @@ async function save() {
       })
       toast.add({ title: 'آرایشگر به‌روزرسانی شد', color: 'success', icon: 'i-lucide-check' })
     } else {
-      if (!form.email.trim() || !form.password) {
-        formError.value = 'ایمیل و رمز عبور برای ساخت حساب آرایشگر الزامی است'
+      if (!isValidMobile(form.phoneNumber) || !form.password) {
+        formError.value = 'شماره موبایل و رمز عبور برای ساخت حساب آرایشگر الزامی است'
         saving.value = false
         return
       }
@@ -117,9 +114,8 @@ async function save() {
         body: {
           salonId: id,
           fullName: form.fullName.trim(),
-          email: form.email.trim(),
+          phoneNumber: form.phoneNumber,
           password: form.password,
-          phoneNumber: form.phoneNumber.trim() || null,
           bio: form.bio.trim() || null,
           avatarUrl: null,
           serviceIds: form.serviceIds
@@ -171,7 +167,7 @@ async function save() {
               <h2 class="truncate font-bold">{{ b.fullName }}</h2>
               <UBadge v-if="!b.isActive" color="neutral" variant="subtle" size="sm">غیرفعال</UBadge>
             </div>
-            <p v-if="b.email" dir="ltr" class="truncate text-xs text-muted">{{ b.email }}</p>
+            <p v-if="b.phoneNumber" dir="ltr" class="truncate text-xs text-muted">{{ b.phoneNumber }}</p>
           </div>
         </div>
 
@@ -191,7 +187,7 @@ async function save() {
             variant="ghost"
             color="neutral"
             icon="i-lucide-clock"
-            :to="`/dashboard/schedule?barber=${b.id}`"
+            :to="`/panel/schedule?barber=${b.id}`"
           >
             ساعات کاری
           </UButton>
@@ -216,14 +212,19 @@ async function save() {
           </UFormField>
 
           <template v-if="!editing">
-            <UFormField label="ایمیل (برای ورود آرایشگر)" required>
-              <UInput v-model="form.email" type="email" dir="ltr" class="w-full" placeholder="barber@example.com" />
+            <UFormField label="شماره موبایل (نام کاربری آرایشگر)" required>
+              <UInput
+                :model-value="form.phoneNumber"
+                dir="ltr"
+                inputmode="numeric"
+                maxlength="11"
+                class="w-full"
+                placeholder="09xxxxxxxxx"
+                @update:model-value="form.phoneNumber = normalizePhoneInput($event)"
+              />
             </UFormField>
             <UFormField label="رمز عبور" required>
-              <UInput v-model="form.password" type="password" class="w-full" placeholder="حداقل ۸ کاراکتر شامل حرف بزرگ و عدد" />
-            </UFormField>
-            <UFormField label="شماره موبایل">
-              <UInput v-model="form.phoneNumber" dir="ltr" class="w-full" placeholder="09xxxxxxxxx" />
+              <PasswordInput v-model="form.password" placeholder="حداقل ۸ کاراکتر شامل حرف بزرگ و عدد" />
             </UFormField>
           </template>
 

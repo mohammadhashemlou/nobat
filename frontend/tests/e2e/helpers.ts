@@ -2,8 +2,13 @@ import { expect, request as playwrightRequest, test, type APIRequestContext } fr
 
 export const API_BASE = process.env.E2E_API_URL ?? 'http://localhost:5080'
 
-export const ADMIN_EMAIL = 'admin@nobat.local'
+export const ADMIN_PHONE = '09120000000'
 export const ADMIN_PASSWORD = 'Admin@123456'
+
+/** A mobile number that is unique per run — it is the account's username. */
+export function uniquePhone(): string {
+  return '09' + String(Date.now()).slice(-9)
+}
 
 /** Fixed +03:30 offset — Iran has not observed DST since 2022. */
 export const TEHRAN_OFFSET_MS = 3.5 * 3_600_000
@@ -31,7 +36,7 @@ export async function adminApi(): Promise<{ api: APIRequestContext; token: strin
   const api = await playwrightRequest.newContext({ baseURL: API_BASE })
 
   const login = await api.post('/api/v1/auth/login', {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
+    data: { phoneNumber: ADMIN_PHONE, password: ADMIN_PASSWORD }
   })
   expect(login.ok(), 'admin login must succeed — is the API seeded and running?').toBeTruthy()
 
@@ -39,10 +44,8 @@ export async function adminApi(): Promise<{ api: APIRequestContext; token: strin
   return { api, token: accessToken }
 }
 
-/**
- * Creates a service + barber with a 7-day shift so any date in the picker is bookable.
- * Names are unique per run, which keeps repeated runs from colliding.
- */
+// Creates a service and a barber with a 7-day shift, so any date in the picker is
+// bookable. Names are unique per run so repeated runs do not collide.
 export async function seedCatalog(api: APIRequestContext, token: string): Promise<SeededCatalog> {
   const auth = { Authorization: `Bearer ${token}` }
   const salon = await (await api.get('/api/v1/salons/default')).json()
@@ -69,9 +72,8 @@ export async function seedCatalog(api: APIRequestContext, token: string): Promis
     data: {
       salonId: salon.id,
       fullName: barberName,
-      email: `barber-${suffix}-${Math.floor(Math.random() * 1000)}@test.local`,
+      phoneNumber: uniquePhone(),
       password: 'Barber@12345',
-      phoneNumber: '09121111111',
       bio: 'آرایشگر تست',
       serviceIds: [service.id]
     }
@@ -103,34 +105,29 @@ export async function seedCatalog(api: APIRequestContext, token: string): Promis
 }
 
 /** Registers a brand-new customer through the API and returns their credentials. */
-export async function createCustomer(api: APIRequestContext): Promise<{ email: string; password: string }> {
-  const email = `e2e-${Date.now()}-${Math.floor(Math.random() * 1000)}@test.local`
+export async function createCustomer(
+  api: APIRequestContext
+): Promise<{ phoneNumber: string; password: string }> {
+  const phoneNumber = uniquePhone()
   const password = 'Test@12345'
 
   const res = await api.post('/api/v1/auth/register', {
     data: {
       fullName: 'مشتری تست',
-      email,
+      phoneNumber,
       password,
       confirmPassword: password,
-      phoneNumber: '09120000000',
       role: 2
     }
   })
   expect(res.ok()).toBeTruthy()
 
-  return { email, password }
+  return { phoneNumber, password }
 }
 
-/**
- * Waits until Nuxt has hydrated the page.
- *
- * Server-rendered markup is visible before Vue takes over. Acting on it too early is
- * the classic source of flaky Nuxt E2E tests: clicks hit elements with no listeners
- * yet, and text typed into a `v-model` input is thrown away when the first client
- * render resets it to the still-empty reactive state. `app/plugins/hydration.client.ts`
- * sets the flag this waits for.
- */
+// Waits for the hydration flag set by app/plugins/hydration.client.ts. Acting on
+// server-rendered markup too early is the classic Nuxt E2E flake: clicks have no
+// listeners and typed text is discarded by the first client render.
 export async function waitForApp(
   page: import('@playwright/test').Page,
   timeout = 60_000
@@ -147,23 +144,20 @@ export async function gotoApp(
   await waitForApp(page)
 }
 
-/** Signs in through the UI and waits for the post-login redirect (dashboard or /my). */
+/** Signs in through the UI and waits for the post-login redirect (panel or /my). */
 export async function uiLogin(
   page: import('@playwright/test').Page,
-  email: string,
+  phoneNumber: string,
   password: string
 ): Promise<void> {
   await gotoApp(page, '/login')
-  await page.getByLabel(/ایمیل/).fill(email)
+  await page.getByLabel(/شماره موبایل/).fill(phoneNumber)
   await page.getByLabel(/رمز عبور/).fill(password)
   await page.getByRole('button', { name: /ورود/ }).click()
-  await expect(page).toHaveURL(/\/dashboard|\/my/, { timeout: 30_000 })
+  await expect(page).toHaveURL(/\/panel|\/my/, { timeout: 30_000 })
 }
 
-/**
- * Selects a Gregorian ISO day in the Jalali date picker.
- * The calendar opens on the current Jalali month, so advance it when needed.
- */
+// Picks a Gregorian ISO day in the Jalali picker, advancing the month if needed.
 export async function pickDay(page: import('@playwright/test').Page, iso: string): Promise<void> {
   const cell = page.locator(`[data-testid="day-cell"][data-iso="${iso}"]`)
 

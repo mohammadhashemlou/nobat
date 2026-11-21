@@ -9,7 +9,7 @@ export type AppointmentStatus =
 
 export interface UserInfo {
   id: string
-  email: string
+  phoneNumber: string
   fullName: string
   role: UserRole
 }
@@ -24,7 +24,7 @@ export interface LoginResponse {
 
 export interface RegisterResponse {
   userId: string
-  email: string
+  phoneNumber: string
   fullName: string
   role: UserRole
 }
@@ -107,7 +107,6 @@ export interface BarberAdmin {
   userId: string
   salonId: string
   fullName: string
-  email?: string | null
   phoneNumber?: string | null
   bio?: string | null
   avatarUrl?: string | null

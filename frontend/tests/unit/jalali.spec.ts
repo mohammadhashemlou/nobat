@@ -53,7 +53,7 @@ describe('Jalali conversion', () => {
   })
 
   it('formats a full date with the Iranian weekday name', () => {
-    // 2026-11-23 is a Monday -> دوشنبه
+    // 2026-11-23 falls on a Monday.
     expect(j.formatFullDate(SAMPLE_ISO)).toBe('دوشنبه ۲ آذر ۱۴۰۵')
     expect(IRANIAN_WEEKDAYS[2]).toBe('دوشنبه')
   })

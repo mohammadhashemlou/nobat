@@ -1,4 +1,4 @@
-# Nobat (نوبت)
+# نوبت (Nobat)
 
 A production-minded online appointment booking platform for barbershops and hair salons.
 
@@ -19,7 +19,7 @@ Jalali calendar with 24-hour time, light and dark modes.
   tests, because the popular `jalaliday` plugin drifts by a day for some dates.
 - **Typed, structured errors.** Domain exceptions and FluentValidation failures are mapped to
   RFC 7807 `ProblemDetails` with a stable `code` and a field-level `errors` map, all in Persian.
-- **Tested at three levels.** 114 backend tests, 55 frontend unit tests and 12 Playwright
+- **Tested at three levels.** 125 backend tests, 55 frontend unit tests and 15 Playwright
   end-to-end tests. See [docs/testing.md](docs/testing.md).
 
 ## Tech Stack
@@ -52,10 +52,11 @@ docker compose up --build
 | Health | http://localhost:5000/health |
 | PostgreSQL | localhost:5432 |
 
-The API migrates and seeds the database on startup. A default administrator is created:
+The API migrates and seeds the database on startup. A default administrator is created.
+Accounts are identified by mobile number — there is no email anywhere in the flow:
 
 ```
-admin@nobat.local / Admin@123456
+09120000000 / Admin@123456
 ```
 
 > Change this password (and `JWT_SECRET`) before exposing the app to anyone.
@@ -87,9 +88,9 @@ The frontend reads the API base URL from `NUXT_PUBLIC_API_BASE`
 ## Testing
 
 ```bash
-cd backend  && dotnet test        # 114 tests (integration tests need PostgreSQL)
+cd backend  && dotnet test        # 125 tests (integration tests need PostgreSQL)
 cd frontend && npm run test       # 55 Vitest tests
-cd frontend && npm run test:e2e   # 12 Playwright tests (both servers running)
+cd frontend && npm run test:e2e   # 15 Playwright tests (both servers running)
 ```
 
 Full details, including how the throw-away test database works and why the Jalali conversion is
@@ -145,7 +146,7 @@ has no EF Core or ASP.NET dependency.
 - **Authentication & RBAC** — Admin, Barber and Customer roles; short-lived access tokens with
   refresh-token rotation.
 - **Public salon page** — services, prices and barbers, with a four-step booking wizard.
-- **Admin dashboard** — services, barbers, working hours, holidays and appointments.
+- **Admin panel** (`/panel`) — services, barbers, working hours, holidays and appointments.
 - **Availability engine** — working hours, service duration, breaks, lead time and existing
   bookings, with a 15-minute slot step.
 - **Double-booking prevention** — application-level check for a friendly `409`, plus a database

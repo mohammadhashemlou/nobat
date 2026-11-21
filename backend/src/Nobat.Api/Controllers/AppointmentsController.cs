@@ -23,7 +23,7 @@ public class AppointmentsController : ControllerBase
         _currentUser = currentUser;
     }
 
-    /// <summary>محاسبه زمان‌های آزاد یک آرایشگر برای خدمت و تاریخ مشخص</summary>
+    /// <summary>Free slots for a barber, service and date.</summary>
     [HttpGet("availability")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AvailabilityDto), StatusCodes.Status200OK)]
@@ -37,7 +37,7 @@ public class AppointmentsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>لیست نوبت‌ها (بر اساس نقش فیلتر می‌شود)</summary>
+    /// <summary>Appointments visible to the current user.</summary>
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(List<AppointmentDto>), StatusCodes.Status200OK)]
@@ -70,7 +70,7 @@ public class AppointmentsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>ثبت نوبت جدید</summary>
+    /// <summary>Creates a new appointment.</summary>
     [HttpPost]
     [Authorize]
     [ProducesResponseType(typeof(AppointmentDto), StatusCodes.Status201Created)]
@@ -89,7 +89,7 @@ public class AppointmentsController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
-    /// <summary>تغییر وضعیت نوبت (تأیید، تکمیل، عدم حضور)</summary>
+    /// <summary>Changes an appointment status.</summary>
     [HttpPatch("{id:guid}/status")]
     [Authorize(Roles = "Admin,Barber")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -99,7 +99,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>لغو نوبت</summary>
+    /// <summary>Cancels an appointment.</summary>
     [HttpPost("{id:guid}/cancel")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

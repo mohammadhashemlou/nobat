@@ -7,7 +7,6 @@ const auth = useAuthStore()
 
 const form = reactive({
   fullName: '',
-  email: '',
   phoneNumber: '',
   password: '',
   confirmPassword: '',
@@ -19,42 +18,43 @@ const error = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string[]>>({})
 const success = ref(false)
 
-const passwordHint = computed(() => {
-  const p = form.password
-  return {
-    length: p.length >= 8,
-    upper: /[A-Z]/.test(p),
-    lower: /[a-z]/.test(p),
-    digit: /[0-9]/.test(p)
-  }
-})
+const passwordHint = computed(() => ({
+  length: form.password.length >= 8,
+  upper: /[A-Z]/.test(form.password),
+  lower: /[a-z]/.test(form.password),
+  digit: /[0-9]/.test(form.password)
+}))
 
 const passwordValid = computed(() => Object.values(passwordHint.value).every(Boolean))
+const phoneValid = computed(() => isValidMobile(form.phoneNumber))
+
 const canSubmit = computed(
   () =>
     form.fullName.trim().length > 1 &&
-    /.+@.+\..+/.test(form.email) &&
+    phoneValid.value &&
     passwordValid.value &&
     form.password === form.confirmPassword
 )
 
 async function submit() {
+  if (!canSubmit.value) return
+
   error.value = null
   fieldErrors.value = {}
   loading.value = true
+
   try {
     await auth.register({
       fullName: form.fullName.trim(),
-      email: form.email.trim(),
+      phoneNumber: form.phoneNumber,
       password: form.password,
       confirmPassword: form.confirmPassword,
-      phoneNumber: form.phoneNumber.trim() || undefined,
       role: form.role
     })
+
     success.value = true
-    // Auto-login after successful registration
-    await auth.login(form.email.trim(), form.password)
-    setTimeout(() => navigateTo(form.role === 'Barber' ? '/dashboard' : '/my'), 700)
+    await auth.login(form.phoneNumber, form.password)
+    await navigateTo(form.role === 'Barber' ? '/panel' : '/my')
   } catch (e: any) {
     error.value = e?.message || 'ثبت‌نام ناموفق بود'
     if (e?.details?.errors) fieldErrors.value = e.details.errors
@@ -94,38 +94,27 @@ async function submit() {
         <UInput v-model="form.fullName" placeholder="مثلاً علی رضایی" icon="i-lucide-user" size="lg" class="w-full" />
       </UFormField>
 
-      <UFormField label="ایمیل" :error="fieldErrors.Email?.[0]" required>
+      <UFormField
+        label="شماره موبایل"
+        :error="fieldErrors.PhoneNumber?.[0] || (form.phoneNumber && !phoneValid ? 'شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود' : undefined)"
+        required
+      >
         <UInput
-          v-model="form.email"
-          type="email"
+          :model-value="form.phoneNumber"
           dir="ltr"
-          placeholder="you@example.com"
-          icon="i-lucide-mail"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField label="شماره موبایل (اختیاری)" :error="fieldErrors.PhoneNumber?.[0]">
-        <UInput
-          v-model="form.phoneNumber"
-          dir="ltr"
+          inputmode="numeric"
+          autocomplete="tel"
           placeholder="09xxxxxxxxx"
-          icon="i-lucide-phone"
+          icon="i-lucide-smartphone"
           size="lg"
           class="w-full"
+          maxlength="11"
+          @update:model-value="form.phoneNumber = normalizePhoneInput($event)"
         />
       </UFormField>
 
       <UFormField label="رمز عبور" :error="fieldErrors.Password?.[0]" required>
-        <UInput
-          v-model="form.password"
-          type="password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          size="lg"
-          class="w-full"
-        />
+        <PasswordInput v-model="form.password" autocomplete="new-password" />
       </UFormField>
 
       <div v-if="form.password" class="grid grid-cols-2 gap-1.5 text-xs">
@@ -148,14 +137,7 @@ async function submit() {
         :error="form.confirmPassword && form.password !== form.confirmPassword ? 'رمزها مطابقت ندارند' : undefined"
         required
       >
-        <UInput
-          v-model="form.confirmPassword"
-          type="password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          size="lg"
-          class="w-full"
-        />
+        <PasswordInput v-model="form.confirmPassword" autocomplete="new-password" />
       </UFormField>
 
       <UButton type="submit" size="lg" block :loading="loading" :disabled="!canSubmit">

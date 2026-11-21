@@ -1,6 +1,6 @@
 /**
  * MVP runs a single salon. This resolves the salon slug to an id once and
- * caches it for the session so dashboard pages can use it.
+ * caches it for the session so panel pages can use it.
  */
 export function useSalon() {
   const config = useRuntimeConfig()

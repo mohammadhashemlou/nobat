@@ -8,6 +8,9 @@ namespace Nobat.Infrastructure.Data;
 
 public static class DbSeeder
 {
+    public const string AdminPhoneNumber = "09120000000";
+    public const string AdminPassword = "Admin@123456";
+
     public static async Task SeedAsync(
         NobatDbContext context,
         UserManager<ApplicationUser> userManager,
@@ -16,49 +19,42 @@ public static class DbSeeder
     {
         await context.Database.MigrateAsync();
 
-        // Seed roles
-        var roles = Enum.GetNames<UserRole>();
-        foreach (var role in roles)
+        foreach (var role in Enum.GetNames<UserRole>())
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
                 await roleManager.CreateAsync(new IdentityRole<Guid>(role));
-                logger?.LogInformation("Seeded role: {Role}", role);
             }
         }
 
-        // Seed default admin user
-        var adminEmail = "admin@nobat.local";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
+        if (await userManager.FindByNameAsync(AdminPhoneNumber) is null)
         {
-            adminUser = new ApplicationUser
+            var admin = new ApplicationUser
             {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true,
+                UserName = AdminPhoneNumber,
+                PhoneNumber = AdminPhoneNumber,
+                PhoneNumberConfirmed = true,
                 FullName = "مدیر سیستم",
                 Role = UserRole.Admin,
                 IsActive = true
             };
 
-            var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+            var result = await userManager.CreateAsync(admin, AdminPassword);
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, UserRole.Admin.ToString());
-                logger?.LogInformation("Seeded admin user: {Email}", adminEmail);
+                await userManager.AddToRoleAsync(admin, UserRole.Admin.ToString());
+                logger?.LogInformation("Seeded admin account {PhoneNumber}", AdminPhoneNumber);
             }
             else
             {
-                logger?.LogError("Failed to seed admin user: {Errors}",
+                logger?.LogError("Could not seed the admin account: {Errors}",
                     string.Join(", ", result.Errors.Select(e => e.Description)));
             }
         }
 
-        // Seed a default salon
         if (!await context.Salons.AnyAsync())
         {
-            var salon = new Salon
+            context.Salons.Add(new Salon
             {
                 Id = Guid.NewGuid(),
                 Name = "سالن نمونه",
@@ -67,13 +63,9 @@ public static class DbSeeder
                 Phone = "02112345678",
                 Description = "سالن زیبایی نمونه برای تست سیستم",
                 DefaultTimezone = "Asia/Tehran"
-            };
+            });
 
-            context.Salons.Add(salon);
             await context.SaveChangesAsync();
-            logger?.LogInformation("Seeded default salon: {Name}", salon.Name);
         }
-
-        await context.SaveChangesAsync();
     }
 }

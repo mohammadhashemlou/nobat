@@ -14,7 +14,7 @@ public class ValidationBehaviorTests
     private static RegisterCommand Valid() => new()
     {
         FullName = "علی رضایی",
-        Email = "ali@example.com",
+        PhoneNumber = "09121234567",
         Password = "Passw0rd",
         ConfirmPassword = "Passw0rd",
         Role = UserRole.Customer
@@ -32,11 +32,11 @@ public class ValidationBehaviorTests
         var result = await behavior.Handle(Valid(), _ =>
         {
             called = true;
-            return Task.FromResult(new RegisterResponse { Email = "handled" });
+            return Task.FromResult(new RegisterResponse { PhoneNumber = "handled" });
         }, CancellationToken.None);
 
         Assert.True(called);
-        Assert.Equal("handled", result.Email);
+        Assert.Equal("handled", result.PhoneNumber);
     }
 
     [Fact]
@@ -48,11 +48,11 @@ public class ValidationBehaviorTests
         var result = await behavior.Handle(Valid(), _ =>
         {
             called = true;
-            return Task.FromResult(new RegisterResponse { Email = "handled" });
+            return Task.FromResult(new RegisterResponse { PhoneNumber = "handled" });
         }, CancellationToken.None);
 
         Assert.True(called);
-        Assert.Equal("handled", result.Email);
+        Assert.Equal("handled", result.PhoneNumber);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ValidationBehaviorTests
             behavior.Handle(Valid() with { Password = "weak", ConfirmPassword = "weak" }, _ =>
             {
                 called = true;
-                return Task.FromResult(new RegisterResponse { Email = "handled" });
+                return Task.FromResult(new RegisterResponse { PhoneNumber = "handled" });
             }, CancellationToken.None));
 
         Assert.False(called);
@@ -79,11 +79,11 @@ public class ValidationBehaviorTests
 
         var ex = await Assert.ThrowsAsync<AppValidationException>(() =>
             behavior.Handle(
-                Valid() with { Email = "bad", Password = "weak", ConfirmPassword = "weak", FullName = "" },
-                _ => Task.FromResult(new RegisterResponse { Email = "handled" }),
+                Valid() with { PhoneNumber = "bad", Password = "weak", ConfirmPassword = "weak", FullName = "" },
+                _ => Task.FromResult(new RegisterResponse { PhoneNumber = "handled" }),
                 CancellationToken.None));
 
-        Assert.Contains(nameof(RegisterCommand.Email), ex.Errors.Keys);
+        Assert.Contains(nameof(RegisterCommand.PhoneNumber), ex.Errors.Keys);
         Assert.Contains(nameof(RegisterCommand.Password), ex.Errors.Keys);
         Assert.Contains(nameof(RegisterCommand.FullName), ex.Errors.Keys);
         Assert.All(ex.Errors.Values, messages => Assert.NotEmpty(messages));
@@ -95,7 +95,7 @@ public class ValidationBehaviorTests
         var behavior = Build(new RegisterCommandValidator(), new ExtraValidator());
 
         var ex = await Assert.ThrowsAsync<AppValidationException>(() =>
-            behavior.Handle(Valid(), _ => Task.FromResult(new RegisterResponse { Email = "handled" }), CancellationToken.None));
+            behavior.Handle(Valid(), _ => Task.FromResult(new RegisterResponse { PhoneNumber = "handled" }), CancellationToken.None));
 
         Assert.Contains(nameof(RegisterCommand.PhoneNumber), ex.Errors.Keys);
     }

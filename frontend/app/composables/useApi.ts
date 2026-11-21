@@ -8,13 +8,8 @@ export interface ApiOptions extends FetchOptions {
   skipRefresh?: boolean
 }
 
-/**
- * Thin wrapper around ofetch that:
- *  - prefixes the API base URL,
- *  - attaches the JWT access token,
- *  - transparently refreshes the token once on 401,
- *  - normalizes backend ProblemDetails into a typed error.
- */
+// ofetch wrapper: prefixes the API base, attaches the access token, retries once
+// after a silent refresh, and turns ProblemDetails into a typed Error.
 export function useApi() {
   const config = useRuntimeConfig()
   const auth = useAuthStore()
@@ -33,6 +28,9 @@ export function useApi() {
     const request = () =>
       $fetch<T>(path, {
         baseURL: config.public.apiBase,
+        // Appointments change from several places at once (panel, customer, booking),
+        // so a cached GET is always the wrong answer here.
+        cache: 'no-store',
         ...(fetchOptions as Record<string, unknown>),
         headers
       } as any) as Promise<T>

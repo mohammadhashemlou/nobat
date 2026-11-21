@@ -64,11 +64,11 @@ export const useAuthStore = defineStore('auth', () => {
     persist()
   }
 
-  async function login(email: string, password: string) {
+  async function login(phoneNumber: string, password: string) {
     const api = useApi()
     const res = await api<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { phoneNumber, password },
       skipAuth: true
     })
     setSession(res)
@@ -77,10 +77,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function register(payload: {
     fullName: string
-    email: string
+    phoneNumber: string
     password: string
     confirmPassword: string
-    phoneNumber?: string
     role: UserRole
   }) {
     const api = useApi()

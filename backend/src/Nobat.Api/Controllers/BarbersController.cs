@@ -20,7 +20,7 @@ public class BarbersController : ControllerBase
 
     public BarbersController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>لیست آرایشگران سالن</summary>
+    /// <summary>Barbers of a salon.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<BarberDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll([FromQuery] Guid salonId, [FromQuery] bool includeInactive = false, CancellationToken ct = default)
@@ -29,7 +29,7 @@ public class BarbersController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>ایجاد آرایشگر (همراه با حساب کاربری)</summary>
+    /// <summary>Creates a barber together with their account.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(BarberDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -39,7 +39,7 @@ public class BarbersController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { salonId = command.SalonId }, result);
     }
 
-    /// <summary>ویرایش آرایشگر</summary>
+    /// <summary>Updates a barber.</summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(BarberDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBarberBody body, CancellationToken ct)
@@ -59,7 +59,7 @@ public class BarbersController : ControllerBase
 
     // ---------------- Working hours ----------------
 
-    /// <summary>دریافت ساعات کاری آرایشگر</summary>
+    /// <summary>Working hours of a barber.</summary>
     [HttpGet("{id:guid}/working-hours")]
     [ProducesResponseType(typeof(List<WorkingHoursDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetWorkingHours(Guid id, CancellationToken ct)
@@ -68,7 +68,7 @@ public class BarbersController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>تنظیم کامل ساعات کاری آرایشگر</summary>
+    /// <summary>Replaces a barber's working hours.</summary>
     [HttpPut("{id:guid}/working-hours")]
     [ProducesResponseType(typeof(List<WorkingHoursDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetWorkingHours(Guid id, [FromBody] SetWorkingHoursBody body, CancellationToken ct)

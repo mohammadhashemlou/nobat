@@ -2,7 +2,7 @@ using MediatR;
 using Nobat.Application.Common.Interfaces;
 using Nobat.Application.Modules.Identity.Commands;
 using Nobat.Application.Modules.Identity.DTOs;
-using Nobat.Domain.Enums;
+using Nobat.Domain.Common;
 
 namespace Nobat.Application.Modules.Identity.Handlers;
 
@@ -17,15 +17,17 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        var phoneNumber = request.PhoneNumber.Trim();
+
         var (success, userId, fullName, role) = await _identityService.ValidateCredentialsAsync(
-            request.Email, request.Password);
+            phoneNumber, request.Password);
 
         if (!success || userId == Guid.Empty)
         {
-            throw new Nobat.Domain.Common.DomainException("ایمیل یا رمز عبور نادرست است", "INVALID_CREDENTIALS");
+            throw new DomainException("شماره موبایل یا رمز عبور نادرست است", "INVALID_CREDENTIALS");
         }
 
-        var accessToken = await _identityService.GenerateAccessTokenAsync(userId, request.Email, fullName, role);
+        var accessToken = await _identityService.GenerateAccessTokenAsync(userId, phoneNumber, fullName, role);
         var (refreshToken, refreshExpiresAt) = await _identityService.GenerateRefreshTokenAsync(userId);
 
         return new LoginResponse
@@ -37,7 +39,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
             User = new UserInfo
             {
                 Id = userId,
-                Email = request.Email,
+                PhoneNumber = phoneNumber,
                 FullName = fullName,
                 Role = role.ToString()
             }

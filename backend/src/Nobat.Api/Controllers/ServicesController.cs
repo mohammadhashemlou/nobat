@@ -17,7 +17,7 @@ public class ServicesController : ControllerBase
 
     public ServicesController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>لیست خدمات سالن</summary>
+    /// <summary>Services of a salon.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<ServiceDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll([FromQuery] Guid salonId, [FromQuery] bool includeInactive = false, CancellationToken ct = default)
@@ -26,7 +26,7 @@ public class ServicesController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>ایجاد خدمت جدید</summary>
+    /// <summary>Creates a service.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(ServiceDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -44,7 +44,7 @@ public class ServicesController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { salonId = body.SalonId }, result);
     }
 
-    /// <summary>ویرایش خدمت</summary>
+    /// <summary>Updates a service.</summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ServiceDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateServiceBody body, CancellationToken ct)
@@ -63,7 +63,7 @@ public class ServicesController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>حذف (غیرفعال‌سازی) خدمت</summary>
+    /// <summary>Deactivates a service.</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)

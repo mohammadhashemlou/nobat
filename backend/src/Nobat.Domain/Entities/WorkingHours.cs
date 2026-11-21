@@ -11,6 +11,5 @@ public class WorkingHours : BaseEntity
     public TimeOnly? BreakStart { get; set; }
     public TimeOnly? BreakEnd { get; set; }
 
-    // Navigation properties
     public Barber Barber { get; set; } = null!;
 }

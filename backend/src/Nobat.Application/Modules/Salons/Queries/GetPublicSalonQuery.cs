@@ -5,7 +5,7 @@ using Nobat.Application.Modules.Salons.DTOs;
 
 namespace Nobat.Application.Modules.Salons.Queries;
 
-/// <summary>دریافت اطلاعات عمومی سالن برای صفحه رزرو</summary>
+/// <summary>Public salon data for the booking page.</summary>
 public record GetPublicSalonQuery(string Slug) : IRequest<PublicSalonDto?>;
 
 public class GetPublicSalonHandler : IRequestHandler<GetPublicSalonQuery, PublicSalonDto?>

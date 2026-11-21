@@ -9,7 +9,7 @@ describe('normalizeError', () => {
         _data: {
           title: 'خطای اعتبارسنجی',
           errors: {
-            Email: ['فرمت ایمیل نامعتبر است'],
+            PhoneNumber: ['شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود'],
             Password: ['رمز عبور الزامی است', 'رمز عبور باید حداقل ۸ کاراکتر باشد']
           }
         }
@@ -19,7 +19,7 @@ describe('normalizeError', () => {
     const result = normalizeError(error)
 
     expect(result.status).toBe(400)
-    expect(result.message).toContain('فرمت ایمیل نامعتبر است')
+    expect(result.message).toContain('شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود')
     expect(result.message).toContain('رمز عبور الزامی است')
     // Multiple messages for one field are joined with the Persian comma.
     expect(result.message).toContain('،')

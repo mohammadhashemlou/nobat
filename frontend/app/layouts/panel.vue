@@ -10,12 +10,12 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { label: 'نمای کلی', to: '/dashboard', icon: 'i-lucide-layout-dashboard' },
-  { label: 'نوبت‌ها', to: '/dashboard/appointments', icon: 'i-lucide-calendar-check' },
-  { label: 'خدمات', to: '/dashboard/services', icon: 'i-lucide-scissors', roles: ['Admin'] },
-  { label: 'آرایشگران', to: '/dashboard/barbers', icon: 'i-lucide-users', roles: ['Admin'] },
-  { label: 'ساعات کاری', to: '/dashboard/schedule', icon: 'i-lucide-clock', roles: ['Admin'] },
-  { label: 'تعطیلات', to: '/dashboard/holidays', icon: 'i-lucide-calendar-off', roles: ['Admin'] }
+  { label: 'نمای کلی', to: '/panel', icon: 'i-lucide-layout-dashboard' },
+  { label: 'نوبت‌ها', to: '/panel/appointments', icon: 'i-lucide-calendar-check' },
+  { label: 'خدمات', to: '/panel/services', icon: 'i-lucide-scissors', roles: ['Admin'] },
+  { label: 'آرایشگران', to: '/panel/barbers', icon: 'i-lucide-users', roles: ['Admin'] },
+  { label: 'ساعات کاری', to: '/panel/schedule', icon: 'i-lucide-clock', roles: ['Admin'] },
+  { label: 'تعطیلات', to: '/panel/holidays', icon: 'i-lucide-calendar-off', roles: ['Admin'] }
 ]
 
 const visibleItems = computed(() =>
@@ -23,7 +23,7 @@ const visibleItems = computed(() =>
 )
 
 const isActive = (to: string) =>
-  to === '/dashboard' ? route.path === '/dashboard' : route.path.startsWith(to)
+  to === '/panel' ? route.path === '/panel' : route.path.startsWith(to)
 
 const sidebarOpen = ref(false)
 </script>

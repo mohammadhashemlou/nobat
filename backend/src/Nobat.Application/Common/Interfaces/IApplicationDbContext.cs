@@ -3,10 +3,7 @@ using Nobat.Domain.Entities;
 
 namespace Nobat.Application.Common.Interfaces;
 
-/// <summary>
-/// Abstraction over the EF Core DbContext so the Application layer
-/// does not depend on Infrastructure.
-/// </summary>
+/// <summary>DbContext surface the Application layer is allowed to use.</summary>
 public interface IApplicationDbContext
 {
     DbSet<Salon> Salons { get; }

@@ -54,3 +54,6 @@ frontend/playwright-report/
 
 # Scratch space (artifact downloads, local debugging)
 .tmp/
+
+# Local assistant workspace state
+.workbuddy-ai/

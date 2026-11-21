@@ -13,7 +13,7 @@ import {
 test.describe.configure({ mode: 'serial' })
 
 let catalog: SeededCatalog
-let customer: { email: string; password: string }
+let customer: { phoneNumber: string; password: string }
 
 test.beforeAll(async () => {
   const { api, token } = await adminApi()
@@ -30,7 +30,7 @@ test.describe('booking flow', () => {
       if (m.type() === 'error') consoleErrors.push(m.text())
     })
 
-    await uiLogin(page, customer.email, customer.password)
+    await uiLogin(page, customer.phoneNumber, customer.password)
     await gotoApp(page, '/booking')
 
     // Step 1 — picking a service advances the wizard automatically.
@@ -65,7 +65,7 @@ test.describe('booking flow', () => {
   })
 
   test('the booked slot is no longer offered', async ({ page }) => {
-    await uiLogin(page, customer.email, customer.password)
+    await uiLogin(page, customer.phoneNumber, customer.password)
     await gotoApp(page, '/booking')
 
     await page.getByText(catalog.serviceName, { exact: false }).first().click()
@@ -81,7 +81,7 @@ test.describe('booking flow', () => {
   })
 
   test('the appointment appears in the customer history', async ({ page }) => {
-    await uiLogin(page, customer.email, customer.password)
+    await uiLogin(page, customer.phoneNumber, customer.password)
     await gotoApp(page, '/my')
 
     await expect(page.locator('body')).toContainText(catalog.serviceName, { timeout: 30_000 })
@@ -89,7 +89,7 @@ test.describe('booking flow', () => {
   })
 
   test('the customer can cancel an upcoming appointment', async ({ page }) => {
-    await uiLogin(page, customer.email, customer.password)
+    await uiLogin(page, customer.phoneNumber, customer.password)
     await gotoApp(page, '/my')
 
     // Cancelling is a single click — the page confirms with a toast, no dialog.
