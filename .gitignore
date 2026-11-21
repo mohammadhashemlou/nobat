@@ -47,3 +47,7 @@ docker/volumes/
 *.log
 logs/
 .pgdata/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/

@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   --------------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+}
+
+/* Persian digits look better with slightly tighter tracking in headings */
+h1, h2, h3, h4 {
+  letter-spacing: -0.01em;
+}
+
+/* Nuxt UI primary color -> brand palette */
+:root {
+  --ui-primary: var(--color-brand-600);
+}
+
+.dark {
+  --ui-primary: var(--color-brand-400);
+}
+
+/* Focus ring consistency */
+*:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Scrollbar (subtle, RTL-aware) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, currentColor 18%, transparent);
+  border-radius: 9999px;
+}
+
+/* Utility: glass panel used across dashboards */
+.panel {
+  @apply rounded-2xl border border-gray-200/80 bg-white shadow-sm
+         dark:border-gray-800 dark:bg-gray-900;
+}
+
+/* Utility: muted text */
+.text-muted {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+/* Slot button states */
+.slot-btn {
+  @apply rounded-xl border px-3 py-2 text-sm font-medium tabular-nums transition
+         border-gray-200 bg-white text-gray-700 hover:border-brand-400 hover:text-brand-600
+         dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+         dark:hover:border-brand-500 dark:hover:text-brand-300;
+}
+
+.slot-btn--active {
+  @apply border-brand-600 bg-brand-600 text-white hover:bg-brand-600 hover:text-white
+         dark:border-brand-500 dark:bg-brand-500 dark:text-white;
+}
+
+/* Page fade-in for route transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
