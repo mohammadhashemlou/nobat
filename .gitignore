@@ -1,0 +1,48 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backend (.NET)
+backend/**/bin/
+backend/**/obj/
+backend/**/TestResults/
+backend/**/*.user
+backend/**/appsettings.Development.json
+backend/**/appsettings.Local.json
+backend/.env
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
+
+# Frontend (Nuxt/Node)
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/.data/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Docker
+docker/volumes/
+
+# Secrets
+*.pfx
+*.p12
+*.key
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
