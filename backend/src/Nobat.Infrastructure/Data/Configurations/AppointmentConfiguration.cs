@@ -18,10 +18,6 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.Notes)
                .HasMaxLength(1000);
 
-        // Row version for optimistic concurrency
-        builder.Property(a => a.RowVersion)
-               .IsRowVersion();
-
         builder.Property(a => a.StartAt)
                .IsRequired();
 

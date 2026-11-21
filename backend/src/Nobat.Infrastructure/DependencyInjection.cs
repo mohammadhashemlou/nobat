@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Nobat.Application.Common.Interfaces;
 using Nobat.Domain.Entities;
+using Nobat.Infrastructure.Common.Services;
 using Nobat.Infrastructure.Data;
 using Nobat.Infrastructure.Options;
 
@@ -39,6 +41,14 @@ public static class DependencyInjection
 
         // JWT Options
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+
+        // Application services
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<NobatDbContext>());
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IDbConstraintDetector, DbConstraintDetector>();
+
+        var timezoneId = configuration["BusinessTimezone"] ?? "Asia/Tehran";
+        services.AddSingleton<IBusinessTimeProvider>(_ => new BusinessTimeProvider(timezoneId));
 
         return services;
     }

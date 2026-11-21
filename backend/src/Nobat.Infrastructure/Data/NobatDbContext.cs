@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Nobat.Application.Common.Interfaces;
 using Nobat.Domain.Entities;
 using Nobat.Infrastructure.Data.Configurations;
 
 namespace Nobat.Infrastructure.Data;
 
-public class NobatDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
+public class NobatDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext
 {
     public NobatDbContext(DbContextOptions<NobatDbContext> options) : base(options)
     {

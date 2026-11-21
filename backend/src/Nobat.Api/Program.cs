@@ -1,26 +1,31 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Nobat.Api.Extensions;
+using Nobat.Application;
 using Nobat.Domain.Entities;
 using Nobat.Infrastructure;
 using Nobat.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// ---------------------------------------------------------------------------
+// Services
+// ---------------------------------------------------------------------------
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.DefaultIgnoreCondition =
-            JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithAuth();
 
-// Infrastructure (Database, Identity, JWT options)
+// Layers
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApiServices();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
@@ -41,20 +46,26 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// ---------------------------------------------------------------------------
+// Pipeline
+// ---------------------------------------------------------------------------
+app.UseExceptionHandling();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nobat API v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseCors("Default");
-
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapHealthChecks("/health");
 
 app.MapGet("/", () => Results.Ok(new
@@ -65,23 +76,27 @@ app.MapGet("/", () => Results.Ok(new
     docs = "/swagger"
 }));
 
-// Seed database in development
-if (app.Environment.IsDevelopment())
+// ---------------------------------------------------------------------------
+// Database migration & seeding
+// ---------------------------------------------------------------------------
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<NobatDbContext>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
         await DbSeeder.SeedAsync(context, userManager, roleManager, logger);
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        if (app.Environment.IsDevelopment())
+        {
+            throw;
+        }
     }
 }
 
