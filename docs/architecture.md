@@ -1,91 +1,100 @@
-# Nobat Architecture
+# معماری نوبت
 
-## Overview
+## نمای کلی
 
-Nobat is a barbershop/salon appointment booking platform built with a clean Modular Monolith architecture.
+نوبت یک سامانه رزرو نوبت آرایشگاه و سالن زیبایی است که با معماری Modular Monolith تمیز ساخته شده است.
 
-## Architecture Layers
+## لایههای معماری
 
-### Backend (ASP.NET Core 10)
+### بکاند (ASP.NET Core 10)
 
-| Layer | Project | Responsibility |
-|---|---|---|
-| Domain | `Nobat.Domain` | Entities, enums, domain events, pure business logic |
-| Application | `Nobat.Application` | Use cases (CQRS via MediatR), DTOs, validators (FluentValidation), interfaces |
-| Infrastructure | `Nobat.Infrastructure` | EF Core DbContext, repositories, ASP.NET Identity, JWT, external services |
-| API | `Nobat.Api` | Controllers, middleware, DI composition, Swagger |
+| لایه | پروژه | مسئولیت |
+| --- | --- | --- |
+| دامنه | `Nobat.Domain` | موجودیتها، enumها، رویدادهای دامنه، منطق خالص کسب و کار |
+| کاربرد | `Nobat.Application` | موارد استفاده (CQRS با MediatR)، DTOها، اعتبارسنجیها (FluentValidation)، رابطها |
+| زیرساخت | `Nobat.Infrastructure` | EF Core DbContext، مخزنها، ASP.NET Identity، JWT، سرویسهای خارجی |
+| API | `Nobat.Api` | کنترلرها، middleware، ترکیب وابستگیها، Swagger |
 
-**Dependency flow**: `Api → Infrastructure → Application → Domain`
+**جریان وابستگی**: `Api → Infrastructure → Application → Domain`
 
-The Domain layer has zero external dependencies. Application depends only on Domain. Infrastructure implements Application interfaces. Api composes everything.
+لایه دامنه هیچ وابستگی خارجی ندارد. لایه کاربرد تنها به دامنه وابسته است. لایه زیرساخت رابطهای لایه
+کاربرد را پیاده سازی می کند و لایه API همه چیز را کنار هم قرار می دهد.
 
-### Frontend (Nuxt 4 + Vue 3 + TypeScript)
+### فرانتاند (Nuxt 4 + Vue 3 + TypeScript)
 
-- Nuxt 4 with SSR
+- Nuxt 4 با SSR
 - Tailwind CSS 4 + Nuxt UI
-- Pinia for state management
-- Jalali↔Gregorian conversion is implemented arithmetically in
-  `app/composables/useJalali.ts`, using a fixed +03:30 business offset (Iran has no DST since
-  2022). No calendar plugin is involved: `jalaliday` drifts by a day for some dates, and
-  timezone-shifting a calendar-aware instance corrupts `.startOf('day')`. Working from epoch
-  milliseconds keeps the result identical on the server, in CI (UTC) and in the browser.
-- Lucide icons
-- Vazirmatn font
-- Full RTL support
-- Light/dark mode
+- Pinia برای مدیریت وضعیت
+- تبدیل تقویم جلالی↔میلادی به صورت حسابی در `app/composables/useJalali.ts` پیاده سازی شده
+  و از آفست ثابت +03:30 استفاده می کند (ایران از سال ۲۰۲۲ ساعت تابستانی ندارد). از هیچ افزونه
+  تقویمی استفاده نمی شود: `jalaliday` در برخی تاریخها یک روز انحراف دارد و جابهجاکردن منطقه زمانی
+  یک نمونه آگاهازتقویم، رفتار `.startOf('day')` را خراب می کند. کار با میلیثانیههای epoch نتیجهای
+  یکسان در سرور، CI (UTC) و مرورگر تضمین می کند.
+- آیکونهای Lucide
+- فونت Vazirmatn
+- پشتیبانی کامل راست چین
+- حالت روشن و تاریک
 
-## Database Schema
+## طرح دیتابیس
 
-### Users (ASP.NET Core Identity)
-- Id, UserName (= mobile number), FullName, PhoneNumber
-- Role: Admin | Barber | Customer
-- LockoutEnd, PhoneNumberConfirmed
+### کاربران (ASP.NET Core Identity)
 
-Email is not collected: the mobile number is the login identifier, so `UserName` and
-`PhoneNumber` hold the same 11-digit value and `RequireUniqueEmail` is off.
+- Id، UserName (همان شماره موبایل)، FullName، PhoneNumber
+- نقش: Admin | Barber | Customer
+- LockoutEnd، PhoneNumberConfirmed
 
-### Salons
-- Id, Name, Slug, Address, Phone, Description
-- DefaultTimezone (default: Asia/Tehran)
-- CreatedAt, UpdatedAt
+ایمیل جمع آوری نمی شود: شماره موبایل شناسه ورود است، بنابراین `UserName` و `PhoneNumber` هر دو همان
+عدد ۱۱ رقمی را نگه میدارند و `RequireUniqueEmail` خاموش است.
 
-### Barbers
-- Id, UserId (FK → Users), SalonId (FK → Salons)
-- FullName, Bio, AvatarUrl, IsActive
-- CreatedAt, UpdatedAt
+### سالنها (Salons)
 
-### Services
-- Id, SalonId (FK → Salons)
-- Name, Description, DurationMinutes, Price
-- IsActive, CreatedAt, UpdatedAt
+- Id، Name، Slug، Address، Phone، Description
+- DefaultTimezone (پیشفرض: Asia/Tehran)
+- CreatedAt، UpdatedAt
 
-### BarberServices (M:N junction)
-- BarberId (FK → Barbers), ServiceId (FK → Services)
-- PK: (BarberId, ServiceId)
+### آرایشگران (Barbers)
 
-### WorkingHours
-- Id, BarberId (FK → Barbers)
-- DayOfWeek (0=Saturday ... 6=Friday for Iran)
-- StartTime (TimeOnly), EndTime (TimeOnly)
-- BreakStart (TimeOnly?), BreakEnd (TimeOnly?)
+- Id، UserId (FK → Users)، SalonId (FK → Salons)
+- FullName، Bio، AvatarUrl، IsActive
+- CreatedAt، UpdatedAt
 
-### Holidays
-- Id, SalonId (FK → Salons)
-- Date (DateOnly), Description
+### خدمات (Services)
+
+- Id، SalonId (FK → Salons)
+- Name، Description، DurationMinutes، Price
+- IsActive، CreatedAt، UpdatedAt
+
+### BarberServices (جدول واسطه (رابطه چند به چند))
+
+- BarberId (FK → Barbers)، ServiceId (FK → Services)
+- کلید اصلی: (BarberId، ServiceId)
+
+### ساعات کاری (WorkingHours)
+
+- Id، BarberId (FK → Barbers)
+- DayOfWeek (در ایران ۰=شنبه ... ۶=جمعه)
+- StartTime (TimeOnly)، EndTime (TimeOnly)
+- BreakStart (TimeOnly?)، BreakEnd (TimeOnly?)
+
+### تعطیلات (Holidays)
+
+- Id، SalonId (FK → Salons)
+- Date (DateOnly)، Description
 - CreatedAt
 
-### Appointments
-- Id, SalonId, BarberId, CustomerId, ServiceId
-- StartAt (UTC), EndAt (UTC)
-- Status: Pending | Confirmed | Completed | Cancelled | NoShow
-- Notes, CreatedAt, UpdatedAt, CancelledAt
-- TimeRange (generated `tstzrange`, maintained by a trigger)
+### نوبتها (Appointments)
 
-**Double-booking prevention** — two layers, both required:
+- Id، SalonId، BarberId، CustomerId، ServiceId
+- StartAt (UTC)، EndAt (UTC)
+- وضعیت: Pending | Confirmed | Completed | Cancelled | NoShow
+- Notes، CreatedAt، UpdatedAt، CancelledAt
+- TimeRange (نوع `tstzrange` تولیدشده که توسط trigger بهروز می شود)
 
-1. **Application-level** (`CreateAppointmentCommand`): an overlap query returns a friendly
-   `409 SLOT_ALREADY_BOOKED` before the insert is attempted.
-2. **Database-level** (the source of truth): a PostgreSQL exclusion constraint
+**جلوگیری از تداخل نوبت** — دو لایه، هر دو لازم هستند:
+
+1. **سطح اپلیکیشن** (`CreateAppointmentCommand`): یک کوئری تشخیص تداخل قبل از درج، پاسخ دوستانه
+   `409 SLOT_ALREADY_BOOKED` برمیگرداند.
+2. **سطح دیتابیس (مرجع نهایی)**: قید انحصاری PostgreSQL:
 
    ```sql
    ALTER TABLE "Appointments"
@@ -94,57 +103,59 @@ Email is not collected: the mobile number is the login identifier, so `UserName`
      WHERE ("Status" NOT IN (3, 4));   -- Cancelled, NoShow
    ```
 
-   A trigger keeps `TimeRange` in sync with `StartAt`/`EndAt`, and the `btree_gist` extension
-   allows `=` on the UUID column inside a GiST index. Two customers racing for the same slot
-   therefore cannot both succeed: the loser gets SQLSTATE `23P01`, which the handler converts
-   into the same `SLOT_ALREADY_BOOKED` response. Cancelling frees the slot because cancelled
-   rows fall outside the partial predicate.
+   یک trigger فیلد `TimeRange` را با `StartAt`/`EndAt` هماهنگ نگه میدارد و افزونه `btree_gist`
+   امکان استفاده از `=` روی ستون UUID داخل ایندکس GiST را فراهم می کند. بنابراین دو مشتری که همزمان
+   یک زمان را درخواست میکنند نمیتوانند هر دو موفق شوند: نفر دوم با SQLSTATE `23P01` مواجه می شود
+   که هندلر آن را به همان پاسخ `SLOT_ALREADY_BOOKED` تبدیل می کند. لغو نوبت هم زمان را آزاد می کند،
+   چون ردیفهای لغوشده خارج از شرط جزئی قید قرار میگیرند.
 
-### AppointmentStatusHistory
-- Id, AppointmentId (FK → Appointments)
-- Status, ChangedByUserId (FK → Users), CreatedAt (UTC)
+### تاریخچه وضعیت نوبت (AppointmentStatusHistory)
 
-## Time Handling
+- Id، AppointmentId (FK → Appointments)
+- Status، ChangedByUserId (FK → Users)، CreatedAt (UTC)
 
-- All timestamps stored in UTC
-- Business time uses `Asia/Tehran` timezone
-- API accepts/returns ISO 8601 UTC timestamps
-- Frontend converts to Jalali for display
+## مدیریت زمان
 
-## Authentication
+- تمام زمانها به صورت UTC ذخیره می شوند
+- زمان کسب و کار از منطقه زمانی `Asia/Tehran` استفاده می کند
+- API زمانهای ISO 8601 UTC را میپذیرد و برمیگرداند
+- فرانتاند برای نمایش، آنها را به تقویم شمسی تبدیل می کند
 
-- Sign in with mobile number + password (no email anywhere)
-- JWT Bearer tokens, 15-minute access token, 7-day rotating refresh token
-- Roles: Admin, Barber, Customer
-- ASP.NET Core Identity for user management
+## احراز هویت
 
-## Module Organization (Application)
+- ورود با شماره موبایل + رمز عبور (هیچ ایمیلی در کار نیست)
+- توکنهای JWT Bearer، توکن دسترسی ۱۵ دقیقهای و توکن تازهسازی چرخشی ۷ روزه
+- نقشها: Admin، Barber، Customer
+- ASP.NET Core Identity برای مدیریت کاربران
+
+## سازماندهی ماژولها (Application)
 
 ```
 Nobat.Application/
 ├── Modules/
-│   ├── Identity/        # Register, Login, Refresh, Profile
-│   ├── Salons/          # CRUD, public salon page data
-│   ├── Barbers/         # CRUD, barber schedules
+│   ├── Identity/        # ثبتنام، ورود، تازهسازی، نمایه
+│   ├── Salons/          # CRUD، دادههای صفحه عمومی سالن
+│   ├── Barbers/         # CRUD، برنامه آرایشگران
 │   ├── Services/        # CRUD
-│   ├── Schedules/       # Working hours, holidays
-│   └── Appointments/    # Booking, availability, status, history
-├── Common/              # Shared DTOs, interfaces, behaviors
+│   ├── Schedules/       # ساعات کاری، تعطیلات
+│   └── Appointments/    # رزرو، زمانهای آزاد، وضعیت، تاریخچه
+├── Common/              # DTOها، رابطها، behaviorهای مشترک
 └── DependencyInjection.cs
 ```
 
-Each module contains:
-- `Commands/` (CQRS writes via MediatR)
-- `Queries/` (CQRS reads)
+هر ماژول شامل این قسمتهاست:
+
+- `Commands/` (نوشتن با CQRS از طریق MediatR)
+- `Queries/` (خواندن با CQRS)
 - `DTOs/`
 - `Validators/`
 - `Handlers/`
 
-## API Conventions
+## قراردادهای API
 
-- RESTful endpoints
-- `/api/v1/` prefix
-- Centralized error handling with ProblemDetails (RFC 7807)
-- Consistent error response shape
-- Pagination via cursor/offset
-- OpenAPI/Swagger documentation
+- نشانیهای RESTful
+- پیشوند `/api/v1/`
+- مدیریت متمرکز خطاها با ProblemDetails (RFC 7807)
+- شکل یکسان برای پاسخ خطا
+- صفحهبندی با cursor/offset
+- مستندات OpenAPI/Swagger

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Point E2E_BASE_URL / E2E_API_URL at an already-running stack, or let Playwright
-// build the app and serve the production output on :3000 against the API on :5080.
+// Point E2E_BASE_URL at an already-running stack, or let Playwright build the app
+// and serve the production output on :3000 against the API on :5080.
 // The production build matters: the dev server ships unbundled ES modules, which on
 // a cold CI runner can arrive later than the actionability timeout.
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'

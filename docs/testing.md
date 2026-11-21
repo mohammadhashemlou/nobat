@@ -1,79 +1,81 @@
-# Testing
+# تستها
 
-The project has three test layers. All of them run in CI (`.github/workflows/ci.yml`).
+پروژه سه لایه تست دارد. هر سه لایه در CI هم اجرا می شوند (`.github/workflows/ci.yml`).
 
-| Layer | Tool | Location | Count |
+| لایه | ابزار | محل | تعداد |
 | --- | --- | --- | --- |
-| Domain + application unit tests | xUnit | `backend/tests/Nobat.Domain.Tests`, `backend/tests/Nobat.Application.Tests` | 77 |
-| API integration tests | xUnit + `WebApplicationFactory` + PostgreSQL | `backend/tests/Nobat.Api.Tests` | 37 |
-| Frontend unit/component tests | Vitest + `@vue/test-utils` | `frontend/tests/unit` | 55 |
-| End-to-end | Playwright | `frontend/tests/e2e` | 15 |
+| تست واحد دامنه و کاربرد | xUnit | `backend/tests/Nobat.Domain.Tests`، `backend/tests/Nobat.Application.Tests` | ۷۷ |
+| تست یکپارچه API | xUnit + `WebApplicationFactory` + PostgreSQL | `backend/tests/Nobat.Api.Tests` | ۳۷ |
+| تست واحد/کامپوننت فرانتاند | Vitest + `@vue/test-utils` | `frontend/tests/unit` | ۵۵ |
+| End-to-end | Playwright | `frontend/tests/e2e` | ۱۵ |
 
-## Backend
+## بکاند
 
 ```bash
 cd backend
-dotnet test                       # everything
-dotnet test tests/Nobat.Domain.Tests        # pure domain rules only
-dotnet test tests/Nobat.Application.Tests   # availability engine + validators
-dotnet test tests/Nobat.Api.Tests           # requires PostgreSQL
+dotnet test                       # همه تستها
+dotnet test tests/Nobat.Domain.Tests        # فقط قوانین خالص دامنه
+dotnet test tests/Nobat.Application.Tests   # موتور زمانبندی + اعتبارسنجیها
+dotnet test tests/Nobat.Api.Tests           # به PostgreSQL نیاز دارد
 ```
 
-### Integration tests and the database
+### تستهای یکپارچه و دیتابیس
 
-`Nobat.Api.Tests` boots the real API pipeline against a **throw-away database**:
+`Nobat.Api.Tests` خط لوله واقعی API رادر برابر یک **دیتابیس یکبارمصرف** راهاندازی می کند:
 
-- a uniquely named database (`nobat_test_<random>`) is created at startup and dropped on teardown;
-- the connection string comes from `NOBAT_TEST_DB`, then `ConnectionStrings__Default`, then the
-  local development default (`localhost:5433`, user `nobat`);
-- the database user needs `CREATE DATABASE` and `CREATE EXTENSION btree_gist`
-  (the exclusion constraint depends on it).
+- در ابتدا یک دیتابیس با نام منحصربهفرد (`nobat_test_<random>`) ساخته و در پایان حذف می شود؛
+- رشته اتصال ابتدا از `NOBAT_TEST_DB`، سپس `ConnectionStrings__Default` و در نهایت از پیشفرض
+  محلی توسعه (`localhost:5433`، کاربر `nobat`) خوانده می شود؛
+- کاربر دیتابیس به مجوزهای `CREATE DATABASE` و `CREATE EXTENSION btree_gist` نیاز دارد
+  (قید انحصاری به آن وابسته است).
 
-If PostgreSQL is unreachable the tests **skip** with an explanatory message rather than failing,
-so `dotnet test` stays usable on a machine without a database. In CI a `postgres:17` service is
-provided, so they always run there.
+اگر PostgreSQL در دسترس نباشد، تستها **رد می شوند** (skip) با یک پیام توضیحی، نه اینکه شکست بخورند؛
+بنابراین `dotnet test` روی ماشینی بدون دیتابیس هم قابل استفاده است. در CI سرویس `postgres:17` فراهم
+است، پس تستها همیشه اجرا می شوند.
 
 ```bash
-# Point the suite at a specific server
+# هدایت تستها به یک سرور مشخص
 NOBAT_TEST_DB="Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres" \
   dotnet test tests/Nobat.Api.Tests
 ```
 
-### What the integration suite proves
+### تستهای یکپارچه چه چیزی را اثبات میکنند
 
-- registration, login, refresh-token rotation (the old refresh token is revoked);
-- Persian, field-level validation errors instead of the English Identity defaults;
-- the full booking flow: availability → book → slot disappears → cancel → slot returns;
-- every rejection path (`PAST_TIME`, `HOLIDAY`, `OUTSIDE_WORKING_HOURS`, `BREAK_OVERLAP`,
-  `NOT_WORKING_DAY`, `SLOT_ALREADY_BOOKED`, `FORBIDDEN`);
-- **database-level** double-booking prevention: rows are inserted directly with SQL, bypassing
-  the application check, and PostgreSQL rejects them with `23P01` on `ck_appointments_nooverlap`;
-- role scoping (a customer only sees their own appointments, cannot change status, cannot create services).
+- ثبتنام، ورود و تازهسازی چرخشی توکن (توکن قدیمی باطل می شود)؛
+- خطاهای اعتبارسنجی فارسی و مربوط به هر فیلد، به جای پیامهای پیشفرض انگلیسی Identity؛
+- جریان کامل رزرو: زمانهای آزاد → رزرو → ناپدید شدن زمان → لغو → بازگشت زمان؛
+- تمام مسیرهای رد شدن (`PAST_TIME`، `HOLIDAY`، `OUTSIDE_WORKING_HOURS`، `BREAK_OVERLAP`،
+  `NOT_WORKING_DAY`، `SLOT_ALREADY_BOOKED`، `FORBIDDEN`)؛
+- **جلوگیری از تداخل در سطح دیتابیس**: ردیفها مستقیم با SQL و با دور زدن بررسی اپلیکیشن درج
+  می شوند و PostgreSQL آنها را با `23P01` روی `ck_appointments_nooverlap` رد می کند؛
+- محدودسازی بر اساس نقش (مشتری فقط نوبتهای خودش را میبیند، نمی تواند وضعیت را تغییر دهد یا خدمت
+  ایجاد کند).
 
-## Frontend
+## فرانتاند
 
 ```bash
 cd frontend
-npm run test          # Vitest, single run
-npm run test:watch    # Vitest, watch mode
+npm run test          # Vitest، یکبار اجرا
+npm run test:watch    # Vitest، حالت تماشا
 ```
 
-The unit suite covers:
+تستهای واحد پوشش می دهند:
 
-- `useJalali` — Jalali↔Gregorian conversion against authoritative anchors, decade round-trips,
-  month lengths, leap years, Persian digits, 24-hour time formatting, API date helpers;
-- `normalizeError` — ProblemDetails → single Persian message;
-- `StatusBadge` — every status maps to the right Persian label and colour.
+- `useJalali` — تبدیل تقویم جلالی↔میلادی در برابر نقاط مرجع معتبر، رفت و برگشت دهساله، طول ماهها،
+  سالهای کبیسه، ارقام فارسی، قالببندی ساعت ۲۴ ساعته و کمککنندههای تاریخ API؛
+- `normalizeError` — تبدیل ProblemDetails به یک پیام واحد فارسی؛
+- `StatusBadge` — نگاشت هر وضعیت به برچسب و رنگ فارسی درست.
 
-> **Why the calendar logic is hand-written.** `jalaliday` drifts by a day for some dates
-> (e.g. 2024-01-05 renders as 1402/10/16 instead of 1402/10/15), and `.startOf('day')` on a
-> timezone-shifted Jalali instance corrupts the date. The composable therefore performs both
-> conversion directions arithmetically from epoch milliseconds and never relies on a plugin.
+> **چرا منطق تقویم دستنویس است؟** کتابخانه `jalaliday` در برخی تاریخها یک روز انحراف دارد
+> (مثلاً ۲۰۲۴-۰۱-۰۵ را ۱۴۰۲/۱۰/۱۶ نمایش می دهد نه ۱۴۰۲/۱۰/۱۵) و فراخوانی `.startOf('day')` روی
+> یک نمونه جلالی که منطقه زمانیش جابهجا شده، تاریخ را خراب می کند. به همین دلیل این composable
+> هر دو جهت تبدیل را به صورت حسابی از میلیثانیههای epoch انجام می دهد و اصلاً به افزونهای تکیه
+> نمی کند.
 >
-> These tests are also **host-timezone independent** — they must pass in UTC (as CI runs them),
-> in Tehran and anywhere else. Earlier they only passed locally because the developer machine
-> happened to be in Iran; running `TZ=UTC npm run test` is the quickest way to reproduce a
-> timezone regression.
+> این تستها همچنین **مستقل از منطقه زمانی میزبان**اند و باید در UTC (همانطور که CI اجرایشان
+> می کند)، در تهران و هر جای دیگری پاس بدهند. قبلاً فقط روی ماشین توسعه پاس میشدند چون آن ماشین
+> تصادفاً در ایران بود. سریعترین راه برای بازتولید یک باگ منطقه زمانی:
+> `TZ=UTC npm run test`
 
 ```bash
 TZ=UTC npm run test
@@ -82,39 +84,39 @@ TZ=America/New_York npm run test
 
 ## End-to-end
 
-Playwright drives the real Nuxt app against the real API.
+Playwright رابط کاربری واقعی Nuxt را در برابر API واقعی هدایت می کند.
 
 ```bash
 cd frontend
-npx playwright install chromium   # once
+npx playwright install chromium   # یکبار
 
-# Both servers must be running (API on :5080, Nuxt on :3000)…
+# هر دو سرور باید در حال اجرا باشند (API روی :5080 و Nuxt روی :3000)…
 npm run test:e2e
 
-# …or let Playwright build and serve the frontend itself, pointed at a running API
-E2E_API_URL=http://localhost:5080 npx playwright test
+# …یا بگذارید Playwright خودش فرانتاند را بسازد و سرو کند، در حالی که به API در حال اجرا متصل است
+NUXT_PUBLIC_API_BASE=http://localhost:5080 npx playwright test
 
-# Against an already-deployed environment
-E2E_BASE_URL=https://staging.example.com E2E_API_URL=https://api.example.com npx playwright test
+# در برابر یک محیط ازپیش مستقرشده
+E2E_BASE_URL=https://staging.example.com npx playwright test
 ```
 
-When Playwright manages the frontend it runs `npm run build` and serves the **production
-output**, not the dev server. That matters: the dev server ships hundreds of unbundled ES
-modules, so on a cold CI runner the client bundle can arrive later than the actionability
-timeout, and tests then interact with server-rendered markup that Vue has not hydrated yet.
-Testing the real artifact keeps hydration sub-second — and it is what ships.
+وقتی Playwright مسئول فرانتاند است، دستور `npm run build` را اجرا و **خروجی عملیاتی** را سرو
+می کند، نه سرور توسعه. این موضوع مهم است: سرور توسعه صدها ماژول ES بستهبندینشده را ارسال می کند،
+بنابراین روی یک runner سرد CI ممکن است بسته سمت مشتری دیرتر از زمان انتظار عملیات برسد و تستها
+با نشانهگذاری سروری تعامل کنند که هنوز توسط Vue hydrate نشده است. تست کردن خروجی واقعی، زمان
+hydrate را زیر یک ثانیه نگه میدارد و دقیقاً همان چیزی است which منتشر می شود.
 
-Because hydration is still asynchronous, `tests/e2e/helpers.ts` exposes `gotoApp()`, which
-navigates and then waits for `html[data-hydrated="true"]` (set by
-`app/plugins/hydration.client.ts`). Always use it instead of a bare `page.goto`: before
-hydration, clicks have no listeners and text typed into a `v-model` input is discarded when
-the first client render resets it.
+از آنجایی که hydrate شدن همچنان ناهمزمان است، فایل `tests/e2e/helpers.ts` تابع `gotoApp()` را
+ارائه می دهد: ابتدا به صفحه میرود و سپس منتظر `html[data-hydrated="true"]` میماند (که توسط
+`app/plugins/hydration.client.ts` تنظیم می شود). همیشه از آن به جای `page.goto` خام استفاده کنید:
+پیش از hydrate شدن، کلیکها شنوندهای ندارند و متنی که در اینپوت `v-model` تایپ می شود، هنگام اولین
+رندر سمت مشتری از بین میرود.
 
-Each run seeds its own service, barber and working hours through the API and registers a fresh
-customer, so runs do not collide. The suite asserts that the booking journey produces **zero
-browser console errors**.
+هر اجرا خدمت، آرایشگر و ساعات کاری خودش را از طریق API میسازد و یک مشتری تازه ثبتنام می کند،
+بنابراین اجراها با هم تداخل نمیکنند. این مجموعه تستها تأکید می کند که جریان رزرو **هیچ خطایی در
+کنسول مرورگر** ایجاد نمی کند.
 
-## Coverage
+## پوشش تست
 
 ```bash
 cd backend
