@@ -63,18 +63,7 @@ async function submit() {
         :error="form.phoneNumber && !phoneValid ? 'شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود' : undefined"
         required
       >
-        <UInput
-          :model-value="form.phoneNumber"
-          dir="ltr"
-          inputmode="numeric"
-          autocomplete="tel"
-          placeholder="09xxxxxxxxx"
-          icon="i-lucide-smartphone"
-          size="lg"
-          class="w-full"
-          maxlength="11"
-          @update:model-value="form.phoneNumber = normalizePhoneInput($event)"
-        />
+        <PhoneInput v-model="form.phoneNumber" size="lg" />
       </UFormField>
 
       <UFormField label="رمز عبور" required>
@@ -99,9 +88,16 @@ async function submit() {
       </p>
     </form>
 
-    <div class="mt-5 rounded-xl bg-gray-100 p-3 text-center text-xs text-muted dark:bg-gray-900">
-      حساب نمونه مدیر:
-      <span dir="ltr" class="font-mono">09120000000 / Admin@123456</span>
+    <div class="mt-5 space-y-1.5 rounded-xl bg-gray-100 p-3 text-center text-xs text-muted dark:bg-gray-900">
+      <p class="font-semibold text-gray-700 dark:text-gray-300">حساب نمونه مدیر</p>
+      <p>
+        شماره تماس:
+        <span dir="ltr" class="font-mono">09120000000</span>
+      </p>
+      <p>
+        رمز عبور:
+        <span dir="ltr" class="font-mono">Admin@123456</span>
+      </p>
     </div>
   </div>
 </template>

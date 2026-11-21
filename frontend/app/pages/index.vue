@@ -39,7 +39,7 @@ const features = [
 const steps = [
   { n: 1, title: 'خدمت را انتخاب کنید', text: 'از میان خدمات سالن، خدمت مورد نظر و مدت آن را ببینید.' },
   { n: 2, title: 'آرایشگر را برگزینید', text: 'آرایشگری که آن خدمت را ارائه می‌دهد انتخاب کنید.' },
-  { n: 3, title: 'زمان را رزرو کنید', text: 'روز و ساعت آزاد را از تقویم شمسی انتخاب و نوبت را ثبت کنید.' }
+  { n: 3, title: 'زمان را رزرو کنید', text: 'روز و ساعت آزاد را انتخاب کنید و نوبت را ثبت کنید.' }
 ]
 
 const primaryCta = computed(() => (auth.isAuthenticated ? '/booking' : '/login'))
@@ -72,7 +72,7 @@ const primaryCta = computed(() => (auth.isAuthenticated ? '/booking' : '/login')
 
           <p class="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
             بدون تماس تلفنی، بدون انتظار در صف. خدمت و آرایشگر را انتخاب کنید،
-            زمان آزاد را از تقویم شمسی ببینید و در چند ثانیه نوبت خود را قطعی کنید.
+            زمان آزاد را ببینید و در چند ثانیه نوبت خود را قطعی کنید.
           </p>
 
           <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

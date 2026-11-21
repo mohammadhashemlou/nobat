@@ -4,6 +4,7 @@ import { fa_ir } from '@nuxt/ui/locale'
 
 <template>
   <UApp :locale="fa_ir">
+    <RouteProgress />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

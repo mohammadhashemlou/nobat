@@ -74,6 +74,11 @@ test.describe('authentication', () => {
 
     const phone = page.getByLabel(/شماره موبایل/)
     await phone.fill('')
+
+    // Letters never reach the field at all.
+    await phone.pressSequentially('abc')
+    await expect(phone).toHaveValue('')
+
     await phone.pressSequentially('0912abc1234567')
 
     await expect(phone).toHaveValue('09121234567')

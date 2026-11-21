@@ -35,21 +35,23 @@ export function useApi() {
         headers
       } as any) as Promise<T>
 
-    try {
-      return await request()
-    } catch (error: any) {
-      const status = error?.response?.status ?? error?.status
+    return trackRequest(async () => {
+      try {
+        return await request()
+      } catch (error: any) {
+        const status = error?.response?.status ?? error?.status
 
-      if (status === 401 && !skipAuth && !skipRefresh && auth.state.refreshToken) {
-        const refreshed = await auth.refresh()
-        if (refreshed) {
-          headers.set('Authorization', `Bearer ${auth.state.accessToken}`)
-          return await request()
+        if (status === 401 && !skipAuth && !skipRefresh && auth.state.refreshToken) {
+          const refreshed = await auth.refresh()
+          if (refreshed) {
+            headers.set('Authorization', `Bearer ${auth.state.accessToken}`)
+            return await request()
+          }
         }
-      }
 
-      throw normalizeError(error)
-    }
+        throw normalizeError(error)
+      }
+    })
   }
 }
 

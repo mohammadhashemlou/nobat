@@ -12,6 +12,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const holidays = ref<Holiday[]>([])
 const saving = ref(false)
+const removingId = ref<string | null>(null)
 
 const selectedDate = ref<string | null>(null)
 const description = ref('')
@@ -61,12 +62,15 @@ async function add() {
 }
 
 async function remove(h: Holiday) {
+  removingId.value = h.id
   try {
     await api(`/api/v1/holidays/${h.id}`, { method: 'DELETE' })
     toast.add({ title: 'تعطیلی حذف شد', color: 'success', icon: 'i-lucide-check' })
     await load()
   } catch (e: any) {
     toast.add({ title: e?.message || 'حذف ناموفق بود', color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    removingId.value = null
   }
 }
 </script>
@@ -119,6 +123,7 @@ async function remove(h: Holiday) {
               color="error"
               size="xs"
               icon="i-lucide-trash-2"
+              :loading="removingId === h.id"
               @click="remove(h)"
             />
           </div>

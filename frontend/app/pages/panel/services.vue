@@ -12,6 +12,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const services = ref<ServiceAdmin[]>([])
 const saving = ref(false)
+const busyId = ref<string | null>(null)
 
 const modalOpen = ref(false)
 const editing = ref<ServiceAdmin | null>(null)
@@ -113,12 +114,15 @@ async function save() {
 }
 
 async function remove(s: ServiceAdmin) {
+  busyId.value = s.id
   try {
     await api(`/api/v1/services/${s.id}`, { method: 'DELETE' })
     toast.add({ title: 'خدمت غیرفعال شد', color: 'success', icon: 'i-lucide-check' })
     await load()
   } catch (e: any) {
     toast.add({ title: e?.message || 'حذف ناموفق بود', color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    busyId.value = null
   }
 }
 
@@ -181,6 +185,7 @@ const priceLabel = (p: number) => `${persianDigits(p.toLocaleString('en-US'))} �
             variant="ghost"
             color="error"
             icon="i-lucide-trash-2"
+            :loading="busyId === s.id"
             @click="remove(s)"
           >
             غیرفعال

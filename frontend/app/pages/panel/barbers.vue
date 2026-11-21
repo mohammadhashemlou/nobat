@@ -213,15 +213,7 @@ async function save() {
 
           <template v-if="!editing">
             <UFormField label="شماره موبایل (نام کاربری آرایشگر)" required>
-              <UInput
-                :model-value="form.phoneNumber"
-                dir="ltr"
-                inputmode="numeric"
-                maxlength="11"
-                class="w-full"
-                placeholder="09xxxxxxxxx"
-                @update:model-value="form.phoneNumber = normalizePhoneInput($event)"
-              />
+              <PhoneInput v-model="form.phoneNumber" />
             </UFormField>
             <UFormField label="رمز عبور" required>
               <PasswordInput v-model="form.password" placeholder="حداقل ۸ کاراکتر شامل حرف بزرگ و عدد" />

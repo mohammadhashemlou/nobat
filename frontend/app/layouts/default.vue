@@ -122,10 +122,15 @@ const mobileOpen = ref(false)
                px-4 py-6 text-sm text-gray-500 sm:flex-row sm:px-6 dark:text-gray-400"
       >
         <p>© {{ new Date().getFullYear() }} نوبت — رزرو آنلاین آرایشگاه</p>
-        <p class="flex items-center gap-1.5">
-          ساخته‌شده با
-          <UIcon name="i-lucide-heart" class="size-4 text-rose-500" />
-          برای آرایشگران ایران
+        <p class="flex flex-wrap items-center justify-center gap-1.5">
+          <span>ساخته‌شده توسط</span>
+          <a
+            href="mailto:m.g.hashemlou@gmail.com"
+            dir="ltr"
+            class="font-medium text-brand-600 hover:underline dark:text-brand-400"
+          >
+            m.g.hashemlou@gmail.com
+          </a>
         </p>
       </div>
     </footer>
