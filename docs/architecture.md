@@ -24,7 +24,9 @@ The Domain layer has zero external dependencies. Application depends only on Dom
 - Nuxt 4 with SSR
 - Tailwind CSS 4 + Nuxt UI
 - Pinia for state management
-- dayjs + jalaliday for Jalali calendar
+- dayjs for timezone-aware time formatting; Jalali↔Gregorian conversion is implemented
+  arithmetically in `app/composables/useJalali.ts` (the `jalaliday` plugin drifts by a day for
+  some dates and miscomputes `.startOf('day')` on timezone-shifted instances)
 - Lucide icons
 - Vazirmatn font
 - Full RTL support
@@ -71,17 +73,31 @@ The Domain layer has zero external dependencies. Application depends only on Dom
 - Id, SalonId, BarberId, CustomerId, ServiceId
 - StartAt (UTC), EndAt (UTC)
 - Status: Pending | Confirmed | Completed | Cancelled | NoShow
-- Notes, RowVersion (for optimistic concurrency)
-- CreatedAt, UpdatedAt, CancelledAt
+- Notes, CreatedAt, UpdatedAt, CancelledAt
+- TimeRange (generated `tstzrange`, maintained by a trigger)
 
-**Double-booking prevention**:
-1. Application-level: check existing appointments in transaction
-2. Database-level: partial UNIQUE INDEX on (BarberId, StartAt, EndAt) WHERE Status NOT IN (Cancelled, NoShow)
-3. RowVersion for optimistic concurrency
+**Double-booking prevention** — two layers, both required:
+
+1. **Application-level** (`CreateAppointmentCommand`): an overlap query returns a friendly
+   `409 SLOT_ALREADY_BOOKED` before the insert is attempted.
+2. **Database-level** (the source of truth): a PostgreSQL exclusion constraint
+
+   ```sql
+   ALTER TABLE "Appointments"
+     ADD CONSTRAINT "ck_appointments_nooverlap"
+     EXCLUDE USING GIST ("BarberId" WITH =, "TimeRange" WITH &&)
+     WHERE ("Status" NOT IN (3, 4));   -- Cancelled, NoShow
+   ```
+
+   A trigger keeps `TimeRange` in sync with `StartAt`/`EndAt`, and the `btree_gist` extension
+   allows `=` on the UUID column inside a GiST index. Two customers racing for the same slot
+   therefore cannot both succeed: the loser gets SQLSTATE `23P01`, which the handler converts
+   into the same `SLOT_ALREADY_BOOKED` response. Cancelling frees the slot because cancelled
+   rows fall outside the partial predicate.
 
 ### AppointmentStatusHistory
 - Id, AppointmentId (FK → Appointments)
-- Status, ChangedAt (UTC), ChangedBy (UserId)
+- Status, ChangedByUserId (FK → Users), CreatedAt (UTC)
 
 ## Time Handling
 

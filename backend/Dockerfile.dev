@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+# Development image: keeps the SDK and runs the API with hot reload.
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dev
+WORKDIR /src
+
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Development \
+    DOTNET_USE_POLLING_FILE_WATCHER=1 \
+    DOTNET_NOLOGO=true
+
+COPY . .
+RUN dotnet restore src/Nobat.Api/Nobat.Api.csproj
+
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "src/Nobat.Api", "--urls", "http://0.0.0.0:8080"]

@@ -1,19 +1,47 @@
-# Backend Dockerfile - Development image
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
+# syntax=docker/dockerfile:1
+# Production image: multi-stage publish onto the ASP.NET Core runtime, running as non-root.
+
+# --------------------------------------------------------------------------- build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy only the project files first so `restore` is cached independently of source changes.
+COPY Nobat.slnx ./
+COPY src/Nobat.Domain/Nobat.Domain.csproj src/Nobat.Domain/
+COPY src/Nobat.Application/Nobat.Application.csproj src/Nobat.Application/
+COPY src/Nobat.Infrastructure/Nobat.Infrastructure.csproj src/Nobat.Infrastructure/
+COPY src/Nobat.Api/Nobat.Api.csproj src/Nobat.Api/
+RUN dotnet restore src/Nobat.Api/Nobat.Api.csproj
+
+COPY src/ src/
+RUN dotnet publish src/Nobat.Api/Nobat.Api.csproj \
+        --configuration Release \
+        --no-restore \
+        --output /app/publish \
+        /p:UseAppHost=false
+
+# --------------------------------------------------------------------------- runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# Expose API port
-EXPOSE 5000
+# curl is used by the container health check; the runtime image ships without it.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set environment
-ENV ASPNETCORE_URLS=http://+:5000
-ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    DOTNET_NOLOGO=true
 
-# Copy solution and project files
-COPY . .
+# Run as an unprivileged user.
+RUN adduser --disabled-password --gecos "" --uid 10001 appuser
+COPY --from=build /app/publish ./
+USER appuser
 
-# Restore dependencies
-RUN dotnet restore
+EXPOSE 8080
 
-# Set entry point
-ENTRYPOINT ["dotnet", "run", "--project", "src/Nobat.Api", "--urls", "http://0.0.0.0:5000"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+    CMD curl --fail --silent http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["dotnet", "Nobat.Api.dll"]

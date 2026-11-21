@@ -1,0 +1,15 @@
+node_modules
+.nuxt
+.output
+.data
+.cache
+test-results
+playwright-report
+coverage
+.env
+.env.*
+!.env.example
+*.log
+Dockerfile
+Dockerfile.dev
+.dockerignore
