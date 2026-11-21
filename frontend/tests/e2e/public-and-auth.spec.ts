@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from './helpers'
+import { ADMIN_EMAIL, ADMIN_PASSWORD, gotoApp } from './helpers'
 
 test.describe('public pages', () => {
   test('home page renders in Persian and RTL', async ({ page }) => {
-    await page.goto('/')
+    await gotoApp(page, '/')
 
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa')
@@ -13,20 +13,20 @@ test.describe('public pages', () => {
   })
 
   test('header exposes login and registration', async ({ page }) => {
-    await page.goto('/')
+    await gotoApp(page, '/')
 
     await expect(page.getByRole('link', { name: 'ورود' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'ثبت‌نام' })).toBeVisible()
   })
 
   test('booking entry point is reachable', async ({ page }) => {
-    await page.goto('/booking')
+    await gotoApp(page, '/booking')
 
     await expect(page.locator('body')).toContainText(/رزرو|نوبت/)
   })
 
   test('dark mode can be toggled', async ({ page }) => {
-    await page.goto('/')
+    await gotoApp(page, '/')
 
     const html = page.locator('html')
     await expect(html).not.toHaveClass(/dark/)
@@ -46,7 +46,7 @@ test.describe('public pages', () => {
 
 test.describe('authentication', () => {
   test('wrong credentials surface a Persian error and stay on the page', async ({ page }) => {
-    await page.goto('/login')
+    await gotoApp(page, '/login')
 
     await page.getByLabel(/ایمیل/).fill(ADMIN_EMAIL)
     await page.getByLabel(/رمز عبور/).fill('DefinitelyWrong@123')
@@ -57,7 +57,7 @@ test.describe('authentication', () => {
   })
 
   test('admin lands on the dashboard and can sign out', async ({ page }) => {
-    await page.goto('/login')
+    await gotoApp(page, '/login')
 
     await page.getByLabel(/ایمیل/).fill(ADMIN_EMAIL)
     await page.getByLabel(/رمز عبور/).fill(ADMIN_PASSWORD)
@@ -74,7 +74,7 @@ test.describe('authentication', () => {
   })
 
   test('the dashboard is protected for anonymous visitors', async ({ page }) => {
-    await page.goto('/dashboard')
+    await gotoApp(page, '/dashboard')
 
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 })
   })

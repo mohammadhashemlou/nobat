@@ -122,13 +122,38 @@ export async function createCustomer(api: APIRequestContext): Promise<{ email: s
   return { email, password }
 }
 
+/**
+ * Waits until Nuxt has hydrated the page.
+ *
+ * Server-rendered markup is visible before Vue takes over. Acting on it too early is
+ * the classic source of flaky Nuxt E2E tests: clicks hit elements with no listeners
+ * yet, and text typed into a `v-model` input is thrown away when the first client
+ * render resets it to the still-empty reactive state. `app/plugins/hydration.client.ts`
+ * sets the flag this waits for.
+ */
+export async function waitForApp(
+  page: import('@playwright/test').Page,
+  timeout = 60_000
+): Promise<void> {
+  await page.locator('html[data-hydrated="true"]').waitFor({ state: 'attached', timeout })
+}
+
+/** Navigates and waits for hydration — use this instead of a bare `page.goto`. */
+export async function gotoApp(
+  page: import('@playwright/test').Page,
+  path: string
+): Promise<void> {
+  await page.goto(path)
+  await waitForApp(page)
+}
+
 /** Signs in through the UI and waits for the post-login redirect (dashboard or /my). */
 export async function uiLogin(
   page: import('@playwright/test').Page,
   email: string,
   password: string
 ): Promise<void> {
-  await page.goto('/login')
+  await gotoApp(page, '/login')
   await page.getByLabel(/ایمیل/).fill(email)
   await page.getByLabel(/رمز عبور/).fill(password)
   await page.getByRole('button', { name: /ورود/ }).click()

@@ -91,12 +91,24 @@ npx playwright install chromium   # once
 # Both servers must be running (API on :5080, Nuxt on :3000)…
 npm run test:e2e
 
-# …or let Playwright start the frontend itself and point it at a running API
+# …or let Playwright build and serve the frontend itself, pointed at a running API
 E2E_API_URL=http://localhost:5080 npx playwright test
 
 # Against an already-deployed environment
 E2E_BASE_URL=https://staging.example.com E2E_API_URL=https://api.example.com npx playwright test
 ```
+
+When Playwright manages the frontend it runs `npm run build` and serves the **production
+output**, not the dev server. That matters: the dev server ships hundreds of unbundled ES
+modules, so on a cold CI runner the client bundle can arrive later than the actionability
+timeout, and tests then interact with server-rendered markup that Vue has not hydrated yet.
+Testing the real artifact keeps hydration sub-second — and it is what ships.
+
+Because hydration is still asynchronous, `tests/e2e/helpers.ts` exposes `gotoApp()`, which
+navigates and then waits for `html[data-hydrated="true"]` (set by
+`app/plugins/hydration.client.ts`). Always use it instead of a bare `page.goto`: before
+hydration, clicks have no listeners and text typed into a `v-model` input is discarded when
+the first client render resets it.
 
 Each run seeds its own service, barber and working hours through the API and registers a fresh
 customer, so runs do not collide. The suite asserts that the booking journey produces **zero

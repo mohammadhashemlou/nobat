@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   adminApi,
+  gotoApp,
   createCustomer,
   seedCatalog,
   pickDay,
@@ -30,7 +31,7 @@ test.describe('booking flow', () => {
     })
 
     await uiLogin(page, customer.email, customer.password)
-    await page.goto('/booking')
+    await gotoApp(page, '/booking')
 
     // Step 1 — picking a service advances the wizard automatically.
     await page.getByText(catalog.serviceName, { exact: false }).first().click()
@@ -65,7 +66,7 @@ test.describe('booking flow', () => {
 
   test('the booked slot is no longer offered', async ({ page }) => {
     await uiLogin(page, customer.email, customer.password)
-    await page.goto('/booking')
+    await gotoApp(page, '/booking')
 
     await page.getByText(catalog.serviceName, { exact: false }).first().click()
     await page.getByText(catalog.barberName, { exact: false }).first().click()
@@ -81,26 +82,24 @@ test.describe('booking flow', () => {
 
   test('the appointment appears in the customer history', async ({ page }) => {
     await uiLogin(page, customer.email, customer.password)
-    await page.goto('/my')
+    await gotoApp(page, '/my')
 
     await expect(page.locator('body')).toContainText(catalog.serviceName, { timeout: 30_000 })
     await expect(page.locator('body')).toContainText(catalog.barberName)
   })
 
-  test('the customer can cancel and the slot returns', async ({ page }) => {
+  test('the customer can cancel an upcoming appointment', async ({ page }) => {
     await uiLogin(page, customer.email, customer.password)
-    await page.goto('/my')
+    await gotoApp(page, '/my')
 
-    const cancelButton = page.getByRole('button', { name: /لغو/ }).first()
+    // Cancelling is a single click — the page confirms with a toast, no dialog.
+    const cancelButton = page.getByRole('button', { name: 'لغو نوبت' }).first()
     await expect(cancelButton).toBeVisible({ timeout: 30_000 })
     await cancelButton.click()
 
-    // A confirmation dialog may guard the action.
-    const confirm = page.getByRole('button', { name: /بله|تأیید|لغو نوبت/ })
-    if (await confirm.count()) {
-      await confirm.last().click()
-    }
+    await expect(page.locator('body')).toContainText('نوبت لغو شد', { timeout: 20_000 })
 
-    await expect(page.locator('body')).toContainText(/لغو/, { timeout: 20_000 })
+    // Once cancelled the appointment moves out of "upcoming", so its action is gone.
+    await expect(page.getByRole('button', { name: 'لغو نوبت' })).toHaveCount(0, { timeout: 20_000 })
   })
 })
