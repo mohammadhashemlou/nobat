@@ -68,8 +68,17 @@ The unit suite covers:
 > **Why the calendar logic is hand-written.** `jalaliday` drifts by a day for some dates
 > (e.g. 2024-01-05 renders as 1402/10/16 instead of 1402/10/15), and `.startOf('day')` on a
 > timezone-shifted Jalali instance corrupts the date. The composable therefore performs both
-> conversion directions arithmetically and never relies on the plugin's calendar for
-> arithmetic or formatting. The tests pin this behaviour.
+> conversion directions arithmetically from epoch milliseconds and never relies on a plugin.
+>
+> These tests are also **host-timezone independent** — they must pass in UTC (as CI runs them),
+> in Tehran and anywhere else. Earlier they only passed locally because the developer machine
+> happened to be in Iran; running `TZ=UTC npm run test` is the quickest way to reproduce a
+> timezone regression.
+
+```bash
+TZ=UTC npm run test
+TZ=America/New_York npm run test
+```
 
 ## End-to-end
 

@@ -1,6 +1,13 @@
-import dayjs from 'dayjs'
-
 export const BUSINESS_TZ = 'Asia/Tehran'
+
+/**
+ * Iran has not observed daylight saving since 2022, so the business timezone is a
+ * constant +03:30 offset. Working with a fixed offset (instead of a tz database)
+ * keeps every conversion deterministic and independent of the host's timezone —
+ * which matters because the server, the CI runner and the browser are rarely all
+ * in Tehran.
+ */
+const BUSINESS_OFFSET_MS = 210 * 60_000
 
 /** Iranian week order: Saturday first. */
 export const IRANIAN_WEEKDAYS = [
@@ -41,11 +48,13 @@ export interface JalaliParts {
 // ---------------------------------------------------------------------------
 // Jalali <-> Gregorian conversion.
 //
-// Deliberately implemented arithmetically (the classic jalaali algorithm) rather
-// than by chaining dayjs setters. dayjs + jalaliday clamps the day-of-month when
-// moving between months of different lengths, which silently produced wrong
-// dates for Esfand — and the whole booking flow depends on these conversions
-// being exact. This version is pure, deterministic and timezone-independent.
+// Implemented arithmetically (the classic jalaali algorithm) rather than through
+// a calendar plugin. Two reasons, both observed in practice:
+//   * `jalaliday` drifts by a day for some dates (2024-01-05 renders as
+//     1402/10/16 instead of 1402/10/15);
+//   * chaining dayjs setters clamps the day-of-month when moving between months
+//     of different lengths, silently producing wrong Esfand dates.
+// This version is pure, deterministic and timezone-independent.
 // ---------------------------------------------------------------------------
 
 const JALALI_BREAKS = [
@@ -128,21 +137,21 @@ export function isJalaliLeapYear(jy: number): boolean {
   return jalaliYearInfo(jy).leap === 0
 }
 
-/** Convert Jalali (y, m, d) to Gregorian parts, without going through dayjs. */
-export function jalaliToGregorianParts(jy: number, jm: number, jd: number): {
-  gy: number
-  gm: number
-  gd: number
-} {
+/** Convert Jalali (y, m, d) to Gregorian parts. */
+export function jalaliToGregorianParts(
+  jy: number,
+  jm: number,
+  jd: number
+): { gy: number; gm: number; gd: number } {
   return jdnToGregorian(jalaliToJdn(jy, jm, jd))
 }
 
-/** Convert Gregorian (y, m, d) to Jalali parts, without going through dayjs. */
-export function gregorianToJalaliParts(gy: number, gm: number, gd: number): {
-  jy: number
-  jm: number
-  jd: number
-} {
+/** Convert Gregorian (y, m, d) to Jalali parts. */
+export function gregorianToJalaliParts(
+  gy: number,
+  gm: number,
+  gd: number
+): { jy: number; jm: number; jd: number } {
   const jdn = gregorianToJdn(gy, gm, gd)
   let jy = gy - 621
   const r = jalaliYearInfo(jy)
@@ -151,7 +160,7 @@ export function gregorianToJalaliParts(gy: number, gm: number, gd: number): {
   let k = jdn - firstFarvardin
 
   if (k >= 0) {
-    // First six months are 31 days each (186 days total).
+    // The first six months are 31 days each (186 days total).
     if (k <= 185) {
       return { jy, jm: 1 + div(k, 31), jd: mod(k, 31) + 1 }
     }
@@ -166,20 +175,52 @@ export function gregorianToJalaliParts(gy: number, gm: number, gd: number): {
   return { jy, jm: 7 + div(k, 30), jd: mod(k, 30) + 1 }
 }
 
+// ---------------------------------------------------------------------------
+// Instant handling
+// ---------------------------------------------------------------------------
+
+export type DateInput = string | number | Date
+
+/** Milliseconds since epoch for any accepted input. */
+function toInstant(date: DateInput): number {
+  if (typeof date === 'number') return date
+  if (date instanceof Date) return date.getTime()
+
+  // Native ISO parsing honours any explicit offset. A bare date is interpreted as
+  // Tehran midnight, which is what every API payload means by "a day".
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date}T00:00:00+03:30` : date
+  const ms = Date.parse(iso)
+  if (Number.isNaN(ms)) throw new Error(`Invalid date: ${String(date)}`)
+  return ms
+}
+
+interface TehranWallClock {
+  gy: number
+  gm: number
+  gd: number
+  hour: number
+  minute: number
+}
+
+/** The Gregorian wall-clock in Tehran for an instant. */
+function tehranWallClock(date: DateInput): TehranWallClock {
+  const shifted = new Date(toInstant(date) + BUSINESS_OFFSET_MS)
+  return {
+    gy: shifted.getUTCFullYear(),
+    gm: shifted.getUTCMonth() + 1,
+    gd: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes()
+  }
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
 export function useJalali() {
-  /** Convert any date-ish input to a dayjs instance in the business timezone. */
-  function toBusiness(date: string | number | Date) {
-    return dayjs(date).tz(BUSINESS_TZ)
-  }
-
-  /** Convert to a Jalali-calendar dayjs instance (Tehran timezone). */
-  function toJalali(date: string | number | Date) {
-    return toBusiness(date).calendar('jalali').locale('fa')
-  }
-
-  /** Convert to a Gregorian-calendar dayjs instance (Tehran timezone). */
-  function toGregorian(date: string | number | Date) {
-    return toBusiness(date).calendar('gregory')
+  /** Tehran midnight of a Jalali date, as a Date. */
+  function jalaliToGregorian(year: number, month: number, day: number): Date {
+    const g = jalaliToGregorianParts(year, month, day)
+    return new Date(`${g.gy}-${pad2(g.gm)}-${pad2(g.gd)}T00:00:00+03:30`)
   }
 
   function persianDigits(input: string | number): string {
@@ -190,58 +231,48 @@ export function useJalali() {
     return input.replace(/[۰-۹]/g, (d) => String(PERSIAN_DIGITS.indexOf(d)))
   }
 
-  /**
-   * Gregorian Y/M/D of an instant as seen in Tehran.
-   * Reads the explicitly-Gregorian formatted string so it can never pick up
-   * Jalali getters from the global calendar.
-   */
-  function tehranGregorianParts(date: string | number | Date) {
-    const [y, m, d] = toGregorian(date).format('YYYY-MM-DD').split('-').map(Number)
-    return { gy: y!, gm: m!, gd: d! }
-  }
-
   /** { year, month (1-12), day } in Jalali. */
-  function parts(date: string | number | Date): JalaliParts {
-    const g = tehranGregorianParts(date)
-    const j = gregorianToJalaliParts(g.gy, g.gm, g.gd)
+  function parts(date: DateInput): JalaliParts {
+    const c = tehranWallClock(date)
+    const j = gregorianToJalaliParts(c.gy, c.gm, c.gd)
     return { year: j.jy, month: j.jm, day: j.jd }
   }
 
   /** 1405/09/02 */
-  function formatDate(date: string | number | Date, withPersianDigits = true): string {
+  function formatDate(date: DateInput, withPersianDigits = true): string {
     const p = parts(date)
-    const out = `${p.year}/${String(p.month).padStart(2, '0')}/${String(p.day).padStart(2, '0')}`
+    const out = `${p.year}/${pad2(p.month)}/${pad2(p.day)}`
     return withPersianDigits ? persianDigits(out) : out
   }
 
   /** ۲ آذر ۱۴۰۵ */
-  function formatLongDate(date: string | number | Date): string {
+  function formatLongDate(date: DateInput): string {
     const p = parts(date)
     return persianDigits(`${p.day} ${JALALI_MONTHS[p.month - 1]} ${p.year}`)
   }
 
   /** دوشنبه ۲ آذر ۱۴۰۵ */
-  function formatFullDate(date: string | number | Date): string {
+  function formatFullDate(date: DateInput): string {
     const p = parts(date)
-    const g = tehranGregorianParts(date)
-    const weekday = IRANIAN_WEEKDAYS[toIranianDow(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)).getUTCDay())]
+    const c = tehranWallClock(date)
+    const weekday = IRANIAN_WEEKDAYS[toIranianDow(new Date(Date.UTC(c.gy, c.gm - 1, c.gd)).getUTCDay())]
     return persianDigits(`${weekday} ${p.day} ${JALALI_MONTHS[p.month - 1]} ${p.year}`)
   }
 
-  /** 09:30 in Tehran time (24h), Persian digits. */
-  function formatTime(date: string | number | Date): string {
-    return persianDigits(toBusiness(date).format('HH:mm'))
+  /** 09:30 in Tehran time (24-hour), Persian digits. */
+  function formatTime(date: DateInput): string {
+    const c = tehranWallClock(date)
+    return persianDigits(`${pad2(c.hour)}:${pad2(c.minute)}`)
   }
 
   /** Relative label: امروز / فردا / دیروز, otherwise the full Jalali date. */
-  function relativeDayLabel(date: string | number | Date): string {
-    // Compare Gregorian day strings instead of calling .startOf('day') on a
-    // timezone-shifted Jalali instance — that combination miscomputes the date.
-    const targetDay = toGregorian(date).format('YYYY-MM-DD')
-    const todayDay = dayjs().tz(BUSINESS_TZ).calendar('gregory').format('YYYY-MM-DD')
+  function relativeDayLabel(date: DateInput): string {
+    const dayMs = (d: DateInput) => {
+      const c = tehranWallClock(d)
+      return Date.UTC(c.gy, c.gm - 1, c.gd)
+    }
 
-    const midnightMs = (isoDay: string) => new Date(`${isoDay}T00:00:00+03:30`).getTime()
-    const diffDays = Math.round((midnightMs(targetDay) - midnightMs(todayDay)) / 86_400_000)
+    const diffDays = Math.round((dayMs(date) - dayMs(Date.now())) / 86_400_000)
 
     if (diffDays === 0) return 'امروز'
     if (diffDays === 1) return 'فردا'
@@ -249,9 +280,9 @@ export function useJalali() {
     return formatFullDate(date)
   }
 
-  /** dayjs .day() (0=Sunday) -> Iranian index (Sat=0 .. Fri=6). */
-  function toIranianDow(dayjsDay: number): number {
-    return (dayjsDay + 1) % 7
+  /** JS weekday (0 = Sunday) -> Iranian index (0 = Saturday .. 6 = Friday). */
+  function toIranianDow(jsDay: number): number {
+    return (jsDay + 1) % 7
   }
 
   /** Number of days in a Jalali month. */
@@ -264,25 +295,18 @@ export function useJalali() {
   /** Iranian weekday index (Sat=0) of the 1st day of a Jalali month. */
   function firstDowOfJalaliMonth(year: number, month: number): number {
     const g = jalaliToGregorianParts(year, month, 1)
-    const dow = new Date(Date.UTC(g.gy, g.gm - 1, g.gd)).getUTCDay()
-    return toIranianDow(dow)
+    return toIranianDow(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)).getUTCDay())
   }
 
-  /** Convert a Jalali date to a JS Date (Tehran midnight). */
-  function jalaliToGregorian(year: number, month: number, day: number): Date {
-    const g = jalaliToGregorianParts(year, month, day)
-    const iso = `${g.gy}-${String(g.gm).padStart(2, '0')}-${String(g.gd).padStart(2, '0')}`
-    return new Date(`${iso}T00:00:00+03:30`)
-  }
-
-  /** ISO date (YYYY-MM-DD, Gregorian) for the API, from a JS Date in Tehran. */
-  function toApiDate(date: string | number | Date): string {
-    return toGregorian(date).format('YYYY-MM-DD')
+  /** ISO date (YYYY-MM-DD, Gregorian) in Tehran — the format the API expects. */
+  function toApiDate(date: DateInput): string {
+    const c = tehranWallClock(date)
+    return `${c.gy}-${pad2(c.gm)}-${pad2(c.gd)}`
   }
 
   /** Today's ISO date (Gregorian) in Tehran. */
   function todayApiDate(): string {
-    return dayjs().tz(BUSINESS_TZ).calendar('gregory').format('YYYY-MM-DD')
+    return toApiDate(Date.now())
   }
 
   return {
@@ -290,9 +314,6 @@ export function useJalali() {
     IRANIAN_WEEKDAYS,
     IRANIAN_WEEKDAYS_SHORT,
     JALALI_MONTHS,
-    toBusiness,
-    toJalali,
-    toGregorian,
     persianDigits,
     latinDigits,
     parts,

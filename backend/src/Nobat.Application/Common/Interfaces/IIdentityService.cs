@@ -7,7 +7,7 @@ public interface IIdentityService
     Task<(bool Success, string? UserId, string? Error)> CreateUserAsync(
         string email, string password, string fullName, UserRole role);
     Task<(bool Success, string? UserId, string? Error)> CreateUserAsync(
-        string email, string password, string fullName, UserRole role, string phoneNumber);
+        string email, string password, string fullName, UserRole role, string? phoneNumber);
     Task<bool> UserExistsByEmailAsync(string email);
     Task<(bool Success, Guid UserId, string FullName, UserRole Role)> ValidateCredentialsAsync(
         string email, string password);

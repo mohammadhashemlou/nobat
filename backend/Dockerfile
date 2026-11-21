@@ -34,8 +34,9 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_NOLOGO=true
 
-# Run as an unprivileged user.
-RUN adduser --disabled-password --gecos "" --uid 10001 appuser
+# Run as an unprivileged user. The .NET runtime images are Ubuntu-based, which ships
+# `useradd` but not Debian's `adduser`.
+RUN useradd --uid 10001 --user-group --no-create-home --shell /usr/sbin/nologin appuser
 COPY --from=build /app/publish ./
 USER appuser
 

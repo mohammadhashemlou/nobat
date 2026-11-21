@@ -56,12 +56,6 @@ export default defineNuxtConfig({
     typeCheck: false
   },
 
-  vite: {
-    optimizeDeps: {
-      include: ['dayjs', 'dayjs/plugin/utc', 'dayjs/plugin/timezone', 'dayjs/locale/fa', 'jalaliday']
-    }
-  },
-
   devServer: {
     port: 3000
   }

@@ -24,9 +24,11 @@ The Domain layer has zero external dependencies. Application depends only on Dom
 - Nuxt 4 with SSR
 - Tailwind CSS 4 + Nuxt UI
 - Pinia for state management
-- dayjs for timezone-aware time formatting; Jalali↔Gregorian conversion is implemented
-  arithmetically in `app/composables/useJalali.ts` (the `jalaliday` plugin drifts by a day for
-  some dates and miscomputes `.startOf('day')` on timezone-shifted instances)
+- Jalali↔Gregorian conversion is implemented arithmetically in
+  `app/composables/useJalali.ts`, using a fixed +03:30 business offset (Iran has no DST since
+  2022). No calendar plugin is involved: `jalaliday` drifts by a day for some dates, and
+  timezone-shifting a calendar-aware instance corrupts `.startOf('day')`. Working from epoch
+  milliseconds keeps the result identical on the server, in CI (UTC) and in the browser.
 - Lucide icons
 - Vazirmatn font
 - Full RTL support

@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import dayjs from 'dayjs'
 import {
   useJalali,
-  BUSINESS_TZ,
   JALALI_MONTHS,
   IRANIAN_WEEKDAYS,
   isJalaliLeapYear,
@@ -171,11 +169,11 @@ describe('Gregorian -> Jalali display', () => {
 })
 
 describe('Iranian weekday mapping', () => {
-  it('maps dayjs Sunday (0) to Iranian Sunday (1)', () => {
+  it('maps JS Sunday (0) to Iranian Sunday (1)', () => {
     expect(j.toIranianDow(0)).toBe(1)
   })
 
-  it('maps dayjs Saturday (6) to Iranian Saturday (0)', () => {
+  it('maps JS Saturday (6) to Iranian Saturday (0)', () => {
     expect(j.toIranianDow(6)).toBe(0)
   })
 
@@ -212,8 +210,8 @@ describe('firstDowOfJalaliMonth', () => {
 describe('relativeDayLabel', () => {
   /**
    * Builds a plain ISO timestamp at noon Tehran, N days from today.
-   * Computed with native Date maths on purpose: `.startOf('day')` / `.toISOString()`
-   * on a Jalali-calendar dayjs instance do not yield a reliable instant.
+   * Computed with native Date maths so the result never depends on the host
+   * timezone or on a calendar plugin's idea of "midnight".
    */
   const isoFromToday = (offsetDays: number) => {
     const ms = Date.now() + offsetDays * 86_400_000 + 3.5 * 3_600_000
